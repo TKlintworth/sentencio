@@ -1,4 +1,5 @@
 import { IUser } from "../Interfaces/IUser";
+import { sql } from "../db";
 
 const users: IUser[] = [];
 

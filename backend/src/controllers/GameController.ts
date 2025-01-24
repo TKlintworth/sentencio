@@ -10,12 +10,14 @@ export class GameController
     {
         const game = new Game();
 
+        // const scores = new Scores()
+        // const sentence = new Sentences()
+
         game.maxRounds = req.maxRounds;
         game.roundLength = req.roundLength;
-
-        // game.save() // TODO: Do this
     }
 
+    // req: gameid, players[]
     public async startGame(req: StartGameRequest)
     {
         const lobby = await LobbyService.findById(req.id);

@@ -3,7 +3,6 @@ import { ILobby } from "../Interfaces/ILobby.ts";
 import { CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest, UserStatus, LobbyDto, ListLobbiesResponse } from "../models/index.ts";
 import { Lobby } from "../schemas/Lobby.ts";
 import UserService from "../services/UserService.ts";
-//import { io } from "../config/socket";
 import * as HttpStatus from "http-status-codes";
 import LobbyService from "../services/LobbyService.ts";
 
@@ -22,6 +21,7 @@ export default class LobbyController
             lobby.password = req.password;
 
         // lobby.save(); TODO: DB call
+
 
         return LobbyDto.parse(lobby);
     }

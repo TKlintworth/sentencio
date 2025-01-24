@@ -8,7 +8,9 @@
     "start": "node src/server.ts",
     "dev": "ts-node-esm src/server.ts",
     "build": "tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "test:db": "ts-node-esm src/db/db.ts",
+    "init:db": "ts-node-esm src/db/init_db.ts"
   },
   "author": "",
   "license": "ISC",
@@ -17,7 +19,7 @@
     "express": "^4.18.2",
     "http-status-codes": "^2.3.0",
     "nanoid": "^5.0.5",
-    "pg": "^8.11.3",
+    "postgres": "^3.4.5",
     "socket.io": "^4.7.4",
     "yarn": "^1.22.22",
     "zod": "^3.24.1"

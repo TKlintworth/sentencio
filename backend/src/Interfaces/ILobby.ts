@@ -14,4 +14,27 @@ export interface ILobby
     messages: Message[];
     password?: string;
     owner: User;
+};
+
+export interface ILobbyMessage
+{
+    //id VARCHAR(36) PRIMARY KEY,
+    //lobby_id VARCHAR(36) REFERENCES lobbies(id) ON DELETE CASCADE,
+    //user_id VARCHAR(36) REFERENCES users(id) ON DELETE CASCADE,
+    //content TEXT NOT NULL,
+    //created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id: string;
+    lobbyId: string;
+    userId: string;
+    content: string;
+    createdAt: Date;
 }
+
+export interface ILobbyUser
+{
+    // lobby_id VARCHAR(36) REFERENCES lobbies(id) ON DELETE CASCADE,
+    // user_id VARCHAR(36) REFERENCES users(id) ON DELETE CASCADE,
+    // PRIMARY KEY (lobby_id, user_id)
+    lobbyId: string;
+    userId: string;
+};
