@@ -29,6 +29,8 @@ export default class LobbyController
     // POST /lobbies/join
     static async joinLobby(req: JoinLobbyRequest, socket: Socket)
     {
+        return null;
+        /*
         try
         {
             const lobby = await LobbyService.findById(req.id);
@@ -68,11 +70,14 @@ export default class LobbyController
         {
             
         }
+        */
     }
 
     // /lobbies/:id/lobby
     static async leaveLobby(req: LeaveLobbyRequest, socket: Socket)
     {
+        return null;
+        /*
         // TODO: local dev. get the lobby
         const lobby = await LobbyService.findById(req.id);
 
@@ -92,12 +97,14 @@ export default class LobbyController
         user.status = UserStatus.Offline;
 
         return HttpStatus.StatusCodes.OK;
+        */
     }
 
     // TODO: Players in lobby endpoint
 
     static async listLobbies()
     {
-        return ListLobbiesResponse.parse(LobbyService.listAllLobbies());
+        return null;
+        //return ListLobbiesResponse.parse(LobbyService.listAllLobbies());
     }
 }

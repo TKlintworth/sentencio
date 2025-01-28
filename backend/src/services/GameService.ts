@@ -1,5 +1,5 @@
 import { IGame } from "../Interfaces/IGame";
-import { sql } from "../db";
+import { sql } from "../db/db.ts";
 
 const games: IGame[] = [];
 

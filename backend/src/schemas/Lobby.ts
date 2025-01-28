@@ -23,7 +23,7 @@ export class Lobby
     } 
 }
 
-export class LobbyMessages
+/* export class LobbyMessages
 {
     public id: string;
     public lobby: string;
@@ -38,7 +38,7 @@ export class LobbyMessages
     }
 
     
-}
+} */
 
 export class LobbyUsers
 {

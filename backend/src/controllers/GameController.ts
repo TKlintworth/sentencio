@@ -20,10 +20,10 @@ export class GameController
     // req: gameid, players[]
     public async startGame(req: StartGameRequest)
     {
-        const lobby = await LobbyService.findById(req.id);
+        //const lobby = await LobbyService.findById(req.id);
 
-        if (lobby)
-            return HttpStatusCodes.StatusCodes.NOT_FOUND;
+        //if (lobby)
+        //    return HttpStatusCodes.StatusCodes.NOT_FOUND;
 
         const game = await GameService.findById(req.id);
         
@@ -36,10 +36,10 @@ export class GameController
 
     public async endGame(req: EndGameRequest)
     {
-        const lobby = await LobbyService.findById(req.id);
+        //const lobby = await LobbyService.findById(req.id);
 
-        if (lobby)
-            return HttpStatusCodes.StatusCodes.NOT_FOUND;
+        //if (lobby)
+         //   return HttpStatusCodes.StatusCodes.NOT_FOUND;
 
         // lobby.status = LobbyStatus.Waiting;
     }
