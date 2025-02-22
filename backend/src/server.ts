@@ -55,6 +55,7 @@ io.on('connection', (socket) => {
 	// LOBBY CONTROLLER EVENTS
 	socket.on(SocketEvents.CREATE_LOBBY, (req: CreateLobbyRequest) => {
 		try {
+			console.warn('create lobby request server.ts: ', req);
 			LobbyController.createLobby(req);
 		} catch (error: any) {
 			errorHandler(socket, 'CREATE_LOBBY_ERROR', error.message);

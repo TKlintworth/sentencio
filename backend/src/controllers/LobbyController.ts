@@ -11,18 +11,18 @@ export default class LobbyController
     // POST /lobbies
     static createLobby(req: CreateLobbyRequest)
     {
+        const validatedReq = CreateLobbyRequest.parse(req);
+        // Create lobby from valid request
         const lobby = new Lobby();
-
-        lobby.maxUsers = req.maxUsers;
-        lobby.name = req.name;
-        lobby.owner = req.owner;
-
-        if (req.password)
-            lobby.password = req.password;
-
-        // lobby.save(); TODO: DB call
+        lobby.maxUsers = validatedReq.maxUsers;
+        lobby.name = validatedReq.name;
+        lobby.owner = validatedReq.owner;
+        if (validatedReq.password)
+            lobby.password = validatedReq.password;
 
 
+        // await lobby.save(); TODO: DB call
+        console.warn('lobby created: ', lobby);
         return LobbyDto.parse(lobby);
     }
 

@@ -18,12 +18,14 @@ export const LobbyDto = Z.object({
     status: Z.enum([LobbyStatus.Started, LobbyStatus.Waiting]),
     messages: Z.array(MessageDto).optional(),
     password: Z.string().optional(),
-    owner: UserDto,
+    //owner: UserDto,
+    owner: Z.string()
 });
 
 export const CreateLobbyRequest = Z.object({
     name: Z.string(),
-    users: Z.array(UserDto),
+    //users: Z.array(UserDto),
+    //users: Z.array(Z.any()),
     maxUsers: Z.number().min(1).max(10), // make these env variables
     password: Z.string().optional(),
     owner: Z.string()

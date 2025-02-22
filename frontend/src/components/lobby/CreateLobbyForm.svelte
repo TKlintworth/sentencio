@@ -27,9 +27,8 @@
 
     const emitCreateLobby = (lobbyData) => {
       console.log('Emitting create lobby: ', lobbyData);
-      console.log(socketSubscription);
+      //console.log(socketSubscription);
       if(socketSubscription){
-        console.log(socketSubscription);
         socketSubscription.emit('create-lobby', lobbyData);
       }
     };
@@ -38,14 +37,13 @@
         // Need to validate our data and send a socket io client event to the server
         event.preventDefault();
         console.log('Client side creating lobby');
-        if (passwordBoolean) {
-            password = document.getElementById('grid-password').value;
-        }
+        console.warn("owner: ", sessionStorage.getItem('sentencio:username'));
         emitCreateLobby({
-            serverName: document.getElementById('server-name').value,
-            password: password,
-            maxUsers: document.getElementById('grid-state').value,
-            hostPlayerName: sessionStorage.getItem('sentencio:username')
+            name: document.getElementById('server-name').value,
+            //users: [],
+            maxUsers: parseInt(document.getElementById('grid-state').value),
+            password: passwordBoolean ? document.getElementById('grid-password').value : undefined,
+            owner: sessionStorage.getItem('sentencio:username')
         });
     }
 
