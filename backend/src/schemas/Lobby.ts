@@ -8,6 +8,7 @@ export class Lobby
     public name: string = "";
     public createdAt: Date;
     public id: string;
+    public shortCode: string = "";
     public users: User[] = [];
     public maxUsers: number = 0;
     public status: LobbyStatus = LobbyStatus.Waiting;

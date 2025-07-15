@@ -8,6 +8,7 @@ import { errorHandler } from './utils/errorHandler.js';
 import { ErrorTypes } from './utils/constants.js';
 import { SocketEvents } from './events/events.js';
 import { CreateUserRequest, CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest } from './models/index.ts';
+import { Socket } from 'dgram';
 
 const app: Express = express();
 const httpServer = http.createServer(app);
@@ -59,7 +60,7 @@ io.on('connection', (socket) => {
 			const lobby = await LobbyController.createLobby(req);
 			
 			console.warn("Created lobby: ", lobby)
-			socket.emit(SocketEvents.LOBBY_CREATED, lobby.id)
+			socket.emit(SocketEvents.LOBBY_CREATED, lobby)
 		} catch (error: any) {
 			errorHandler(socket, 'CREATE_LOBBY_ERROR', error.message);
 		}
@@ -75,9 +76,9 @@ io.on('connection', (socket) => {
 
 	socket.on(SocketEvents.JOIN_LOBBY, async (req: JoinLobbyRequest) => {
 		try {
-			const joinedId = await LobbyController.joinLobby(req, socket);
-			console.log('joinedId: ', joinedId);
-			//socket.emit(SocketEvents.JOIN_LOBBY, joinedId);
+			const joinedShortCode = await LobbyController.joinLobby(req, socket);
+			console.log('joinedShortCode: ', joinedShortCode);
+			socket.emit(SocketEvents.LOBBY_JOINED, joinedShortCode)
 		} catch (error: any) {
 			errorHandler(socket, 'JOIN_LOBBY_ERROR', error.message);
 		}

@@ -5,6 +5,7 @@ import { Lobby } from "../schemas/Lobby.ts";
 import UserService from "../services/UserService.ts";
 import * as HttpStatus from "http-status-codes";
 import LobbyService from "../services/LobbyService.ts";
+import { generateSlug } from "../utils/slugGenerator.ts";
 
 export default class LobbyController
 {
@@ -12,12 +13,27 @@ export default class LobbyController
     static async createLobby(req: CreateLobbyRequest)
     {
         const validatedReq = CreateLobbyRequest.parse(req);
+
         // Create lobby from valid request
         const lobby = new Lobby();
+
+        let shortCode = "";
+        let attempts = 0;
+
+        do {
+            shortCode = generateSlug();
+            attempts++;
+        } while (await LobbyService.getLobbyByShortCode(shortCode) && attempts < 10);
+
+        if (attempts >= 10) {
+            throw new Error("Failed to generate unique shortCode");
+        }
 
         lobby.maxUsers = validatedReq.maxUsers;
         lobby.name = validatedReq.name;
         lobby.owner = validatedReq.owner;
+
+        lobby.shortCode = shortCode;
 
         if (validatedReq.password)
             lobby.password = validatedReq.password;
@@ -40,7 +56,7 @@ export default class LobbyController
         console.warn('join lobby request: ', validatedReq);
 
         // Find the lobby with this id in the DB (check if the lobby exists)
-        const lobbyId = validatedReq.id;
+        const lobbyShortCode = validatedReq.shortCode;
 
         // Check if we are at maxUsers or not
 
@@ -50,7 +66,7 @@ export default class LobbyController
 
         // Add validatedReq.userId to user list in the lobby object for this specific lobby
 
-        return validatedReq.id;
+        return lobbyShortCode;
 
 
 

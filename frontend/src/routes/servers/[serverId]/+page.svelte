@@ -13,6 +13,20 @@
             //if (socket) {
             //    socket.emit('join-lobby', lobbyId);
             //}
+            if (socket) {
+                cleanup?.(); // Remove old listeners
+
+                console.log(`Joined lobby ${lobbyId}`)
+
+                socketSubscription = socket;
+                
+                
+                //socket.emit('join-lobby', lobbyId);
+
+                cleanup = () => {
+                    //socket.off('join-lobby', handleLobbyJoined);
+                }
+            }
         });
     });
 

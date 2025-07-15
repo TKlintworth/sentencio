@@ -15,19 +15,21 @@
                 cleanup?.(); // remove old listeners
                 socketSubscription = socket;
                 
-                const handleLobbyCreated = (lobbyId) => {
-                    console.log('Lobby created with ID: ', lobbyId);
+                const handleLobbyCreated = (lobby) => {
+                    console.log('Lobby created with ID: ', lobby.shortCode);
+                    // TODO: Can we make this more secure?
+                    // Auto join your own created lobby
                     const lobbyReq = { 
-                        id: lobbyId, 
+                        shortCode: lobby.shortCode, 
                         userId: sessionStorage.getItem('sentencio:username'), 
                         password: password 
                     };
                     socket.emit('join-lobby', lobbyReq);
                 };
                 
-                const handleLobbyJoined = (lobbyId) => {
-                    console.log('Lobby joined: ', lobbyId);
-                    goto('/servers/' + lobbyId);
+                const handleLobbyJoined = (lobbyShortCode) => {
+                    console.log('Lobby joined: ', lobbyShortCode);
+                    goto('/servers/' + lobbyShortCode);
                 };
                 
                 socket.on('lobby-created', handleLobbyCreated);
@@ -84,7 +86,7 @@
                     Server Name
                 </label>
                 <input class="w-full px-4 py-3 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                       id="server-name" type="text">
+                      id="server-name" type="text">
             </div>
             <div>
                 <label class="inline-flex items-center text-white font-bold">

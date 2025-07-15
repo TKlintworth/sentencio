@@ -10,6 +10,7 @@ export enum LobbyStatus
 
 export const LobbyDto = Z.object({ 
     name: Z.string(),
+    shortCode: Z.string(),
     createdAt: Z.date(),
     id: Z.string(),
     users: Z.array(UserDto),
@@ -32,7 +33,8 @@ export const CreateLobbyRequest = Z.object({
 });
 
 export const JoinLobbyRequest = Z.object({
-    id: Z.string(),
+    //id: Z.string(),
+    shortCode: Z.string(),
     userId: Z.string(),
     password: Z.string().optional()
 });

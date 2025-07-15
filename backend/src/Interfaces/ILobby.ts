@@ -7,6 +7,7 @@ export interface ILobby
     name: string;
     createdAt: Date; 
     id: string;
+    shortCode: string;
     users: User[];
     maxUsers: number;
     status: LobbyStatus;

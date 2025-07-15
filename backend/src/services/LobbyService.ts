@@ -5,11 +5,11 @@ import { sql } from "../db";
 
 export default class LobbyService
 {
-    public static async createLobby(lobby: ILobby)
+    public static async createLobby(lobby: ILobby) : Promise<ILobby>
     {
         console.warn('Creating lobby in LobbyService: ', lobby);
         await sql`
-            INSERT INTO lobbies (id, name, created_at, max_users, status, game_id, password, owner_id)
+            INSERT INTO lobbies (id, name, created_at, max_users, status, game_id, password, owner_id, short_code)
             VALUES (
                 ${lobby.id}, 
                 ${lobby.name}, 
@@ -18,11 +18,23 @@ export default class LobbyService
                 ${lobby.status}, 
                 ${lobby.game ?? null}, 
                 ${lobby.password ?? null}, 
-                ${lobby.owner}
+                ${lobby.owner},
+                ${lobby.shortCode}
             )
         `
 
         return lobby;
+    }
+
+    public static async getLobbyByShortCode(shortCode: string) : Promise<ILobby>
+    {
+        console.warn("Getting lobby by short code");
+
+        const result = await sql`
+            SELECT * FROM lobbies WHERE short_code = ${shortCode} LIMIT 1
+        `
+
+        return result[0] as ILobby || null;
     }
 
 /*  
