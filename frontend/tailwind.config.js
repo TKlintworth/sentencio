@@ -71,7 +71,6 @@ export default {
         },
       }
     },
-    colors: {},
   },
   plugins: [require("daisyui"), require('@tailwindcss/forms')],
   daisyui: {

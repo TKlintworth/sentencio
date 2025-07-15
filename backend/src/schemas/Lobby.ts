@@ -12,7 +12,7 @@ export class Lobby
     public maxUsers: number = 0;
     public status: LobbyStatus = LobbyStatus.Waiting;
     public game?: string;
-    //public messages: Message[] = [];
+    public messages: Message[] = [];
     public password?: string;
     public owner: string = ""; // eventually our DB will showing the object vs id, more on that later
    
@@ -20,6 +20,7 @@ export class Lobby
     {
         this.id = nanoid();
         this.createdAt = new Date();
+        this.messages = [];
     } 
 }
 

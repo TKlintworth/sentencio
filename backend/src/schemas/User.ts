@@ -15,9 +15,4 @@ export class User
         this.createdAt = new Date();
         this.id = nanoid();
     }
-
-    public setStatus()
-    {
-
-    }
 }

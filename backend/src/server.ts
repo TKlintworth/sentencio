@@ -53,10 +53,13 @@ io.on('connection', (socket) => {
 	});
 
 	// LOBBY CONTROLLER EVENTS
-	socket.on(SocketEvents.CREATE_LOBBY, (req: CreateLobbyRequest) => {
+	socket.on(SocketEvents.CREATE_LOBBY, async (req: CreateLobbyRequest) => {
 		try {
 			console.warn('create lobby request server.ts: ', req);
-			LobbyController.createLobby(req);
+			const lobby = await LobbyController.createLobby(req);
+			
+			console.warn("Created lobby: ", lobby)
+			socket.emit(SocketEvents.LOBBY_CREATED, lobby.id)
 		} catch (error: any) {
 			errorHandler(socket, 'CREATE_LOBBY_ERROR', error.message);
 		}
@@ -70,9 +73,11 @@ io.on('connection', (socket) => {
 		}
 	});
 
-	socket.on(SocketEvents.JOIN_LOBBY, (req: JoinLobbyRequest) => {
+	socket.on(SocketEvents.JOIN_LOBBY, async (req: JoinLobbyRequest) => {
 		try {
-			LobbyController.joinLobby(req, socket);
+			const joinedId = await LobbyController.joinLobby(req, socket);
+			console.log('joinedId: ', joinedId);
+			//socket.emit(SocketEvents.JOIN_LOBBY, joinedId);
 		} catch (error: any) {
 			errorHandler(socket, 'JOIN_LOBBY_ERROR', error.message);
 		}

@@ -9,27 +9,72 @@ import LobbyService from "../services/LobbyService.ts";
 export default class LobbyController
 {
     // POST /lobbies
-    static createLobby(req: CreateLobbyRequest)
+    static async createLobby(req: CreateLobbyRequest)
     {
         const validatedReq = CreateLobbyRequest.parse(req);
         // Create lobby from valid request
         const lobby = new Lobby();
+
         lobby.maxUsers = validatedReq.maxUsers;
         lobby.name = validatedReq.name;
         lobby.owner = validatedReq.owner;
+
         if (validatedReq.password)
             lobby.password = validatedReq.password;
 
-
-        // await lobby.save(); TODO: DB call
         console.warn('lobby created: ', lobby);
-        return LobbyDto.parse(lobby);
+        const validatedLobby = LobbyDto.parse(lobby);
+        console.warn('validated lobby: ', validatedLobby);
+
+        // Add the lobby to the lobbies table
+        const createdLobby = await LobbyService.createLobby(validatedLobby);
+        return createdLobby;
     }
 
     // POST /lobbies/join
     static async joinLobby(req: JoinLobbyRequest, socket: Socket)
     {
-        return null;
+        //console.warn('join lobby request: ', req);
+        const validatedReq = JoinLobbyRequest.parse(req);
+
+        console.warn('join lobby request: ', validatedReq);
+
+        // Find the lobby with this id in the DB (check if the lobby exists)
+        const lobbyId = validatedReq.id;
+
+        // Check if we are at maxUsers or not
+
+        // Check what state the game is currently in
+
+        // Validate the password 
+
+        // Add validatedReq.userId to user list in the lobby object for this specific lobby
+
+        return validatedReq.id;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         /*
         try
         {

@@ -8,7 +8,7 @@ export enum LobbyStatus
     Waiting = "waiting"
 }
 
-export const LobbyDto = Z.object({
+export const LobbyDto = Z.object({ 
     name: Z.string(),
     createdAt: Z.date(),
     id: Z.string(),
@@ -16,7 +16,7 @@ export const LobbyDto = Z.object({
     maxUsers: Z.number().min(1).max(10), // make these env variables
     game: Z.string().optional(),
     status: Z.enum([LobbyStatus.Started, LobbyStatus.Waiting]),
-    messages: Z.array(MessageDto).optional(),
+    messages: Z.array(MessageDto).default([]),
     password: Z.string().optional(),
     //owner: UserDto,
     owner: Z.string()

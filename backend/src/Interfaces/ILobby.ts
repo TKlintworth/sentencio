@@ -11,9 +11,9 @@ export interface ILobby
     maxUsers: number;
     status: LobbyStatus;
     game?: string;
-    messages: Message[];
+    messages?: Message[];
     password?: string;
-    owner: User;
+    owner: string;
 };
 
 export interface ILobbyMessage

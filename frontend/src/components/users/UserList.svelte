@@ -12,8 +12,8 @@
       socketStore.subscribe((socket) => {
         if (socket) {
           socketSubscription = socket;
-          fetchUsers();
-          subscribeToEvents();
+          //fetchUsers();
+          //subscribeToEvents();
         }
       });
     });

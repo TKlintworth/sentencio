@@ -32,15 +32,16 @@
         let lobbyId = enteredGameCode;
         console.log('Requesting to join lobby: ', lobbyId);
         selectedLobbyId = lobbyId;
+        const lobbyReq = { id: selectedLobbyId, userId: sessionStorage.getItem('sentencio:username') }
         $socketStore.emit('check-lobby-password', lobbyId, (requiresPassword) => {
             if (requiresPassword) {
                 showPasswordModal = true;
             } else {
-                $socketStore.emit('join-lobby', lobbyId);
+                $socketStore.emit('join-lobby', lobbyReq);
             }
         });
     }
-
+    
     let nameEntered = false;
     let playButtonText = 'Play';
     let name;
@@ -71,7 +72,9 @@
 
     function handlePasswordSubmit(event) {
         const { password } = event.detail;
-        $socketStore.emit('join-lobby', selectedLobbyId, password);
+        const lobbyReq = { id: selectedLobbyId, userId: name, password: password };
+        console.warn("Joining lobby from Landing: ", lobbyReq);
+        $socketStore.emit('join-lobby', lobbyReq);
     }
 
     function handlePasswordCancel() {
@@ -88,13 +91,13 @@
     </div>
     <div class="main buttons">
         <div class="nameEntry">
-            <input bind:value={name} type="text" placeholder={defaultName} class="input input-bordered" />
+            <input bind:value={name} type="text" placeholder={defaultName} class="input input-bordered bg-white text-black" />
             <button class="btn btn-de-york-500 hover:bg-de-york-600 ml-2" on:click={playClickedHandler}>{playButtonText}</button>
         </div>
         {#if nameEntered}
             <section class="sub buttons">
                 <div class="flex">
-                    <input bind:value={enteredGameCode} type="text" placeholder="Enter Game Code" class="input input-bordered flex-grow" />
+                    <input bind:value={enteredGameCode} type="text" placeholder="Enter Game Code" class="input input-bordered flex-grow bg-white text-black" />
                     <button class="btn btn-de-york-500 hover:bg-de-york-600 ml-2" on:click={joinLobbyUsingGameCode}>Join Game</button>
                 </div>
                 <button class="btn bg-de-york-500  hover:bg-de-york-600" on:click={createLobbyClicked}>Create Lobby</button>

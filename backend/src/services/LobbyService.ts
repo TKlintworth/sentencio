@@ -7,11 +7,9 @@ export default class LobbyService
 {
     public static async createLobby(lobby: ILobby)
     {
-        return
-/*         await sql`
-            INSERT INTO lobbies (
-                id, name, created_at, max_users, status, game, password, owner
-            ) 
+        console.warn('Creating lobby in LobbyService: ', lobby);
+        await sql`
+            INSERT INTO lobbies (id, name, created_at, max_users, status, game_id, password, owner_id)
             VALUES (
                 ${lobby.id}, 
                 ${lobby.name}, 
@@ -22,16 +20,20 @@ export default class LobbyService
                 ${lobby.password ?? null}, 
                 ${lobby.owner}
             )
-        ` */
+        `
+
+        return lobby;
     }
 
-/*     public static async listAllLobbies(): Promise<ILobby[]>
+/*  
+    public static async listAllLobbies(): Promise<ILobby[]>
     {
         return lobbies;
     }
+
+    public static async findById(id: string):Promise<ILobby>
+    {
+        return null;
+    } 
 */
-    //public static async findById(id: string):Promise<ILobby>
-    //{
-    //    return null;
-    //} 
 }

@@ -6,11 +6,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node src/server.ts",
-    "dev": "ts-node-esm src/server.ts",
+    "dev": "tsx src/server.ts",
     "build": "tsc",
     "watch": "tsc -w",
-    "test:db": "ts-node-esm src/db/db.ts",
-    "init:db": "ts-node-esm src/db/init_db.ts"
+    "test:db": "tsx src/db/db.ts",
+    "init:db": "tsx src/db/init_db.ts"
   },
   "author": "",
   "license": "ISC",
@@ -26,9 +26,9 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
-    "@types/node": "^22.10.6",
+    "@types/node": "^22.15.0",
     "@types/socket.io": "^3.0.2",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.7.3"
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
   }
 }
