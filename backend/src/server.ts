@@ -76,7 +76,7 @@ io.on('connection', (socket) => {
 
 	socket.on(SocketEvents.JOIN_LOBBY, async (req: JoinLobbyRequest) => {
 		try {
-			const joinedShortCode = await LobbyController.joinLobby(req, socket);
+			const joinedShortCode = await LobbyController.joinLobby(req);
 			console.log('joinedShortCode: ', joinedShortCode);
 			socket.emit(SocketEvents.LOBBY_JOINED, joinedShortCode)
 		} catch (error: any) {

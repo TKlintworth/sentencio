@@ -17,7 +17,7 @@
 
     function createLobbyClicked() {
         // Implementation for hosting a game
-        
+        console.warn("Username: ", name);
         goto('/servers/create');
     }
 

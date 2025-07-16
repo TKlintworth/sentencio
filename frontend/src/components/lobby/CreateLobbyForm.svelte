@@ -20,6 +20,7 @@
                     // TODO: Can we make this more secure?
                     // Auto join your own created lobby
                     const lobbyReq = { 
+                        lobbyId: lobby.id,
                         shortCode: lobby.shortCode, 
                         userId: sessionStorage.getItem('sentencio:username'), 
                         password: password 

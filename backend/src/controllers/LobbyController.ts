@@ -48,15 +48,17 @@ export default class LobbyController
     }
 
     // POST /lobbies/join
-    static async joinLobby(req: JoinLobbyRequest, socket: Socket)
+    static async joinLobby(req: JoinLobbyRequest)
     {
-        //console.warn('join lobby request: ', req);
+        // Call LobbyServer.addUserToLobby()
         const validatedReq = JoinLobbyRequest.parse(req);
 
-        console.warn('join lobby request: ', validatedReq);
+        const joinLobbyRet = await LobbyService.addUserToLobby(validatedReq)
+
+        console.warn('join lobby ret: ', joinLobbyRet);
 
         // Find the lobby with this id in the DB (check if the lobby exists)
-        const lobbyShortCode = validatedReq.shortCode;
+        const lobbyShortCode = joinLobbyRet.shortCode;
 
         // Check if we are at maxUsers or not
 

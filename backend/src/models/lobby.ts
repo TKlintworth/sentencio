@@ -33,7 +33,7 @@ export const CreateLobbyRequest = Z.object({
 });
 
 export const JoinLobbyRequest = Z.object({
-    //id: Z.string(),
+    lobbyId: Z.string(),
     shortCode: Z.string(),
     userId: Z.string(),
     password: Z.string().optional()

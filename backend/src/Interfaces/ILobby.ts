@@ -8,7 +8,6 @@ export interface ILobby
     createdAt: Date; 
     id: string;
     shortCode: string;
-    users: User[];
     maxUsers: number;
     status: LobbyStatus;
     game?: string;
@@ -38,4 +37,5 @@ export interface ILobbyUser
     // PRIMARY KEY (lobby_id, user_id)
     lobbyId: string;
     userId: string;
+    shortCode: string;
 };
