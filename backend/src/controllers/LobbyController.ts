@@ -48,119 +48,33 @@ export default class LobbyController
     }
 
     // POST /lobbies/join
-    static async joinLobby(req: JoinLobbyRequest)
+    static async joinLobby(req: JoinLobbyRequest, socket: Socket)
     {
         // Call LobbyServer.addUserToLobby()
         const validatedReq = JoinLobbyRequest.parse(req);
+        const joinResult = await LobbyService.addUserToLobby(validatedReq)
+        console.warn("LobbyController.joinLobby: ", joinResult);
+        console.warn(`User ${joinResult.userId} joined lobby ${joinResult.lobbyId} with shortCode ${joinResult.shortCode}`);
+        socket.join(joinResult.shortCode);
 
-        const joinLobbyRet = await LobbyService.addUserToLobby(validatedReq)
+        // Notify other users in the lobby that a new user has joined
+        const currentUsers = await LobbyService.getLobbyUsers(joinResult.shortCode)
+        socket.emit('lobby-users', currentUsers)
+        socket.to(joinResult.shortCode).emit('user-joined-lobby', validatedReq.userId);
 
-        console.warn('join lobby ret: ', joinLobbyRet);
-
-        // Find the lobby with this id in the DB (check if the lobby exists)
-        const lobbyShortCode = joinLobbyRet.shortCode;
-
-        // Check if we are at maxUsers or not
-
-        // Check what state the game is currently in
-
-        // Validate the password 
-
-        // Add validatedReq.userId to user list in the lobby object for this specific lobby
-
-        return lobbyShortCode;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        /*
-        try
-        {
-            const lobby = await LobbyService.findById(req.id);
-            const user = UserService.findById(req.userId);
-    
-            // TODO: Replace errors with error along with appropriate http code
-            if (!user)
-                throw new Error("User does not exist");
-
-            if (!lobby)
-                throw new Error('Lobby not found');
-        
-            if (lobby.password && lobby.password !== req.password)
-                throw new Error('Incorrect password');
-        
-            if (lobby.users.length >= lobby.maxUsers) 
-                throw new Error('Lobby is full');
-        
-            // if (lobby.users[req.userId] !== undefined)
-            //     throw new Error('You are already in this lobby');
-        
-            socket.join(lobby.id);
-            console.log(`User ${socket.id} joined lobby ${lobby.name}, ${lobby.id}`);
-
-            // onlineUsers[socket.id].lobby = lobbyId;
-            // onlineUsers[socket.id].lobbyName = lobbies[lobbyId].serverName;
-            // io.emit('user-updated', onlineUsers[socket.id]);
-
-            // Send a message to the user that they have successfully joined the lobby
-            socket.to(lobby.id).emit('user-joined-lobby', user);
-            socket.emit('lobby-joined', lobby.id);
-            //io.emit('lobby-updated', lobby.id);
-
-            return HttpStatus.StatusCodes.ACCEPTED; // TODO: Does this correctly return to the client?
-        }
-        catch(err)
-        {
-            
-        }
-        */
+        return joinResult.shortCode;
     }
 
     // /lobbies/:id/lobby
     static async leaveLobby(req: LeaveLobbyRequest, socket: Socket)
     {
-        return null;
-        /*
-        // TODO: local dev. get the lobby
-        const lobby = await LobbyService.findById(req.id);
-
-        // does user exist
-        const user = await UserService.findById(req.userId);
-        // is the requesting user already in the lobby
+        console.warn("LobbyController.leaveLobby: ", req);
         
-        // if (!lobby.users.includes(user))
-        // {
-        //     throw new Error('User not found');
-        // }
+        await LobbyService.removeUserFromLobby(req);
 
-        // remove socket/leave socket
-        socket.leave(lobby.id);
+        socket.leave(req.shortCode);
 
-        // set user status to disconnected
-        user.status = UserStatus.Offline;
-
-        return HttpStatus.StatusCodes.OK;
-        */
+        socket.to(req.shortCode).emit('user-left-lobby', req.username);
     }
 
     // TODO: Players in lobby endpoint

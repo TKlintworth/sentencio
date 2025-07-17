@@ -40,8 +40,8 @@ export const JoinLobbyRequest = Z.object({
 });
 
 export const LeaveLobbyRequest = Z.object({
-    id: Z.string(),
-    userId: Z.string()
+    username: Z.string(),
+    shortCode: Z.string()
 });
 
 export const ListLobbiesResponse = Z.object({

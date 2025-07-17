@@ -8,7 +8,6 @@ import { errorHandler } from './utils/errorHandler.js';
 import { ErrorTypes } from './utils/constants.js';
 import { SocketEvents } from './events/events.js';
 import { CreateUserRequest, CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest } from './models/index.ts';
-import { Socket } from 'dgram';
 
 const app: Express = express();
 const httpServer = http.createServer(app);
@@ -20,8 +19,6 @@ const io = new Server(httpServer, {
 });
 
 const gameController = new GameController();
-
-// io.attach(httpServer);
 
 io.on('connection', (socket) => {
 	// Now the socket represents a connection to a specific client
@@ -76,7 +73,7 @@ io.on('connection', (socket) => {
 
 	socket.on(SocketEvents.JOIN_LOBBY, async (req: JoinLobbyRequest) => {
 		try {
-			const joinedShortCode = await LobbyController.joinLobby(req);
+			const joinedShortCode = await LobbyController.joinLobby(req, socket);
 			console.log('joinedShortCode: ', joinedShortCode);
 			socket.emit(SocketEvents.LOBBY_JOINED, joinedShortCode)
 		} catch (error: any) {

@@ -1,5 +1,6 @@
 import { ILobby, ILobbyUser } from "../Interfaces/ILobby";
 import { sql } from "../db";
+import { LeaveLobbyRequest } from "../models";
 
 export default class LobbyService
 {
@@ -40,12 +41,11 @@ export default class LobbyService
     public static async addUserToLobby(lobbyUser: ILobbyUser): Promise<ILobbyUser>
     {
         // lobby_users table
-        console.warn("Adding user to lobby");
-
+        console.warn(`Adding user to lobby: ${lobbyUser.userId} to ${lobbyUser.lobbyId}`);
         const result = await sql`
-            INSERT INTO lobby_users (lobby_id, user_id, short_code) 
+            INSERT INTO lobby_users (lobby_id, username, short_code) 
             VALUES (${lobbyUser.lobbyId}, ${lobbyUser.userId}, ${lobbyUser.shortCode})
-            ON CONFLICT (lobby_id, user_id) DO NOTHING
+            ON CONFLICT (lobby_id, username) DO NOTHING
             RETURNING *
         `;
 
@@ -54,8 +54,36 @@ export default class LobbyService
         }
 
         console.warn("User added to lobby:", result[0]);
+        return {
+            lobbyId: result[0].lobby_id,
+            userId: result[0].username,
+            shortCode: result[0].short_code
+        } as ILobbyUser;
+    }
 
-        return result[0] as ILobbyUser;
+    public static async removeUserFromLobby(leaveReq: LeaveLobbyRequest): Promise<void>
+    {
+        console.warn("Removing user from lobby:", leaveReq);
+
+        await sql`
+            DELETE FROM lobby_users 
+            WHERE short_code = ${leaveReq.shortCode} AND username = ${leaveReq.username}
+        `;
+
+        console.warn("User removed from lobby:", leaveReq.username);
+    }
+
+    public static async getLobbyUsers(shortCode: string): Promise<string[]>
+    {
+        console.warn("Getting users for lobby with shortCode:", shortCode);
+
+        const result = await sql`
+            SELECT username FROM lobby_users WHERE short_code = ${shortCode}
+        `;
+
+        console.warn("Users in lobby:", result.map((row: any) => row.username));
+
+        return result.map((row: any) => row.username);
     }
 
     //public static async removeUserFromLobby(lobbyUser: ILobbyUser): Promise<ILobbyUser>
