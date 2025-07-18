@@ -26,7 +26,7 @@ export default class LobbyService
         return lobby;
     }
 
-    public static async getLobbyByShortCode(shortCode: string) : Promise<ILobby>
+    public static async getLobbyByShortCode(shortCode: string) : Promise<ILobby | null>
     {
         // lobbies table
         console.warn("Getting lobby by short code");
@@ -35,7 +35,23 @@ export default class LobbyService
             SELECT * FROM lobbies WHERE short_code = ${shortCode} LIMIT 1
         `
 
-        return result[0] as ILobby || null;
+        //return result[0] as ILobby || null;
+        if (!result || result.length === 0) {
+            console.warn(`No lobby found with shortCode ${shortCode}`);
+            return null;
+        }
+
+        return {
+            id: result[0].id,
+            name: result[0].name,
+            shortCode: result[0].short_code,
+            createdAt: result[0].created_at,
+            maxUsers: result[0].max_users,
+            status: result[0].status,
+            game: result[0].game_id ?? undefined,
+            password: result[0].password ?? undefined,
+            owner: result[0].owner_id
+        } as ILobby
     }
 
     public static async addUserToLobby(lobbyUser: ILobbyUser): Promise<ILobbyUser>

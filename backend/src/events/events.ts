@@ -14,6 +14,7 @@ export enum SocketEvents
     LEAVE_LOBBY = "leave-lobby", //changed
     LIST_LOBBIES = "list-lobbies",
     LOBBY_CREATED = "lobby-created",
+    GET_LOBBY_INFO = "get-lobby-info",
 
     // Game Events
     START_GAME = "start-game",

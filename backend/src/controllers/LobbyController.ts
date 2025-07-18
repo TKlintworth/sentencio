@@ -48,7 +48,7 @@ export default class LobbyController
     }
 
     // POST /lobbies/join
-    static async joinLobby(req: JoinLobbyRequest, socket: Socket)
+    static async joinLobby(req: JoinLobbyRequest, socket: Socket) 
     {
         // Call LobbyServer.addUserToLobby()
         const validatedReq = JoinLobbyRequest.parse(req);
@@ -63,6 +63,30 @@ export default class LobbyController
         socket.to(joinResult.shortCode).emit('user-joined-lobby', validatedReq.userId);
 
         return joinResult.shortCode;
+    }
+
+    static async getLobbyInfo(shortCode: string): Promise<ILobby | null> {
+        if (!shortCode) {
+            throw new Error("Short code is required");
+        }
+
+        const lobby = await LobbyService.getLobbyByShortCode(shortCode);
+        if (!lobby) {
+            console.warn(`Lobby with shortCode ${shortCode} not found.`);
+            return null;
+        }
+
+        console.warn(`Retrieved lobby info for shortCode ${shortCode}:`, lobby);
+        return {
+            id: lobby.id,
+            name: lobby.name,
+            shortCode: lobby.shortCode,
+            owner: lobby.owner,
+            maxUsers: lobby.maxUsers,
+            status: lobby.status,
+            createdAt: lobby.createdAt,
+            password: !!lobby.password ? "protected" : "open",
+        } as ILobby;
     }
 
     // /lobbies/:id/lobby

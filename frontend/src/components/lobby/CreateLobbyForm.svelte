@@ -5,7 +5,6 @@
 
     let passwordBoolean = false;
     let socketSubscription = null;
-    let password = '';
 
     onMount(() => {
         let cleanup;
@@ -17,28 +16,13 @@
                 
                 const handleLobbyCreated = (lobby) => {
                     console.log('Lobby created with ID: ', lobby.shortCode);
-                    // TODO: Can we make this more secure?
-                    // Auto join your own created lobby
-                    const lobbyReq = { 
-                        lobbyId: lobby.id,
-                        shortCode: lobby.shortCode, 
-                        userId: sessionStorage.getItem('sentencio:username'), 
-                        password: password 
-                    };
-                    socket.emit('join-lobby', lobbyReq);
-                };
-                
-                const handleLobbyJoined = (lobbyShortCode) => {
-                    console.log('Lobby joined: ', lobbyShortCode);
-                    goto('/servers/' + lobbyShortCode);
+                    goto('/servers/' + lobby.shortCode);
                 };
                 
                 socket.on('lobby-created', handleLobbyCreated);
-                socket.on('lobby-joined', handleLobbyJoined);
                 
                 cleanup = () => {
                     socket.off('lobby-created', handleLobbyCreated);
-                    socket.off('lobby-joined', handleLobbyJoined);
                 };
             }
         });

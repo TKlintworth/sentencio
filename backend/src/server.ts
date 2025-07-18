@@ -53,10 +53,7 @@ io.on('connection', (socket) => {
 	// LOBBY CONTROLLER EVENTS
 	socket.on(SocketEvents.CREATE_LOBBY, async (req: CreateLobbyRequest) => {
 		try {
-			console.warn('create lobby request server.ts: ', req);
 			const lobby = await LobbyController.createLobby(req);
-			
-			console.warn("Created lobby: ", lobby)
 			socket.emit(SocketEvents.LOBBY_CREATED, lobby)
 		} catch (error: any) {
 			errorHandler(socket, 'CREATE_LOBBY_ERROR', error.message);
@@ -71,10 +68,25 @@ io.on('connection', (socket) => {
 		}
 	});
 
+	socket.on(SocketEvents.GET_LOBBY_INFO, async (shortCode: string, callback) => {
+		try {
+			const lobby = await LobbyController.getLobbyInfo(shortCode);
+			if (!lobby) {
+				return callback({ error: 'Lobby not found' });
+			}
+			callback(lobby);
+		} catch (error: any) {
+			errorHandler(socket, 'GET_LOBBY_INFO_ERROR', error.message);
+			callback({ error: error.message });
+		}
+	});
+
 	socket.on(SocketEvents.JOIN_LOBBY, async (req: JoinLobbyRequest) => {
 		try {
 			const joinedShortCode = await LobbyController.joinLobby(req, socket);
 			console.log('joinedShortCode: ', joinedShortCode);
+			
+			// To navigate the client to the server page 
 			socket.emit(SocketEvents.LOBBY_JOINED, joinedShortCode)
 		} catch (error: any) {
 			errorHandler(socket, 'JOIN_LOBBY_ERROR', error.message);
