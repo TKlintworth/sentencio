@@ -30,16 +30,8 @@
     function joinLobbyUsingGameCode() {
         // Implementation for joining a game using a game code
         let lobbyId = enteredGameCode;
-        console.log('Requesting to join lobby: ', lobbyId);
-        selectedLobbyId = lobbyId;
-        const lobbyReq = { id: selectedLobbyId, userId: sessionStorage.getItem('sentencio:username') }
-        $socketStore.emit('check-lobby-password', lobbyId, (requiresPassword) => {
-            if (requiresPassword) {
-                showPasswordModal = true;
-            } else {
-                $socketStore.emit('join-lobby', lobbyReq);
-            }
-        });
+        console.log('Navigating to lobby: ', lobbyId);
+        goto("/servers/" + lobbyId)
     }
     
     let nameEntered = false;
