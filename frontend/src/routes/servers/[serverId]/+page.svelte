@@ -7,6 +7,8 @@
     import { goto } from '$app/navigation';
     import UserList from '../../../components/users/UserList.svelte';
     import PasswordModal from '../../../components/layouts/PasswordModal.svelte';
+    import LobbyHeader from '../../../components/layouts/LobbyHeader.svelte';
+    import Header from '../../../components/layouts/Header.svelte';
 
     const shortCode = $page.params.serverId;
     let user = sessionStorage.getItem('sentencio:username');
@@ -101,6 +103,12 @@
     });
 </script>
 
+{#if lobbyData}
+    <LobbyHeader lobbyData={lobbyData} shortCode={shortCode} slot="header" />
+{:else}
+    <Header slot="header" />
+{/if}
+
 <main class="container mx-auto">
     <h1 class="text-3xl font-bold mb-8">Lobby: {shortCode}</h1>
 
@@ -113,6 +121,7 @@
         <p>Joining lobby...</p>
     {/if}
 </main>
+
 <PasswordModal bind:showModal={showPasswordModal}
                on:submit={handlePasswordSubmit}
                on:cancel={() => goto('/servers')} />

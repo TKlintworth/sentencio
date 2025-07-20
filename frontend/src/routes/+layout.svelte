@@ -34,7 +34,10 @@
 
 <ErrorBoundary>
     <div class="grid_container">
-        <Header />
+        <slot name="header">
+            <Header />
+        </slot>
+        
         {#if connectionStatus === 'connected'}
             <slot />
         {:else}
