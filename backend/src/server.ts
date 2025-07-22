@@ -8,6 +8,7 @@ import { errorHandler } from './utils/errorHandler.js';
 import { ErrorTypes } from './utils/constants.js';
 import { SocketEvents } from './events/events.js';
 import { CreateUserRequest, CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest } from './models/index.ts';
+import { join } from 'path';
 
 const app: Express = express();
 const httpServer = http.createServer(app);
@@ -23,6 +24,25 @@ const gameController = new GameController();
 io.on('connection', (socket) => {
 	// Now the socket represents a connection to a specific client
 
+	async function totalUserCount() {
+		const sockets = await io.fetchSockets();
+		const count = sockets.length;
+		console.log(`New connection: ${socket.id}, Total clients: ${count}`);
+		return sockets.length;
+	}
+	
+	totalUserCount().then(count => {
+		console.log(`Total clients connected: ${count}`);
+		socket.emit('global-client-count', count);
+	});
+
+
+	socket.on('disconnect', async () => {
+		const count = await totalUserCount();
+		console.log(`Client disconnected: ${socket.id}, Total clients: ${count}`);
+		socket.emit('global-client-count', count);
+	});
+
 	// USER CONTROLLER EVENTS
 	socket.on(SocketEvents.CREATE_USER, (req: CreateUserRequest) => {
 		try {
@@ -32,15 +52,6 @@ io.on('connection', (socket) => {
 			errorHandler(socket, 'SET_NAME_ERROR', error.message);
 		}
 	});
-
-	// socket.on('disconnect', () => {
-	// 	try {
-	// 		gameController.handlePlayerDisconnect(socket);
-	// 		userController.handleUserDisconnection(socket);
-	// 	} catch (error) {
-	// 		errorHandler(socket, ErrorTypes.USER_DISCONNECTION, error.message);
-	// 	}
-	// });
 
 	socket.on(SocketEvents.LIST_ALL_USERS, () => {
 		try {
@@ -84,9 +95,7 @@ io.on('connection', (socket) => {
 	socket.on(SocketEvents.JOIN_LOBBY, async (req: JoinLobbyRequest) => {
 		try {
 			const joinedShortCode = await LobbyController.joinLobby(req, socket);
-			console.log('joinedShortCode: ', joinedShortCode);
-			
-			// To navigate the client to the server page 
+			io.to(joinedShortCode).emit('user-joined-lobby', req.userId);
 			socket.emit(SocketEvents.LOBBY_JOINED, joinedShortCode)
 		} catch (error: any) {
 			errorHandler(socket, 'JOIN_LOBBY_ERROR', error.message);
@@ -147,6 +156,15 @@ io.on('connection', (socket) => {
 	// 		gameController.submitSentence(lobbyId, socket, sentence);
 	// 	} catch (error) {
 	// 		errorHandler(socket, ErrorTypes.SUBMIT_SENTENCE, error.message);
+	// 	}
+	// });
+
+	// socket.on('disconnect', () => {
+	// 	try {
+	// 		gameController.handlePlayerDisconnect(socket);
+	// 		userController.handleUserDisconnection(socket);
+	// 	} catch (error) {
+	// 		errorHandler(socket, ErrorTypes.USER_DISCONNECTION, error.message);
 	// 	}
 	// });
 });

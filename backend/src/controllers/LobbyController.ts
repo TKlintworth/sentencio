@@ -53,16 +53,13 @@ export default class LobbyController
         // Call LobbyServer.addUserToLobby()
         const validatedReq = JoinLobbyRequest.parse(req);
         const joinResult = await LobbyService.addUserToLobby(validatedReq)
+        const lobbyShortCode = joinResult.shortCode;
         console.warn("LobbyController.joinLobby: ", joinResult);
         console.warn(`User ${joinResult.userId} joined lobby ${joinResult.lobbyId} with shortCode ${joinResult.shortCode}`);
-        socket.join(joinResult.shortCode);
+        // Creates a room with the shortCode as its name
+        socket.join(lobbyShortCode);
 
-        // Notify other users in the lobby that a new user has joined
-        const currentUsers = await LobbyService.getLobbyUsers(joinResult.shortCode)
-        socket.emit('lobby-users', currentUsers)
-        socket.to(joinResult.shortCode).emit('user-joined-lobby', validatedReq.userId);
-
-        return joinResult.shortCode;
+        return lobbyShortCode;
     }
 
     static async getLobbyInfo(shortCode: string): Promise<ILobby | null> {
@@ -95,10 +92,7 @@ export default class LobbyController
         console.warn("LobbyController.leaveLobby: ", req);
         
         await LobbyService.removeUserFromLobby(req);
-
-        socket.leave(req.shortCode);
-
-        socket.to(req.shortCode).emit('user-left-lobby', req.username);
+        
     }
 
     // TODO: Players in lobby endpoint

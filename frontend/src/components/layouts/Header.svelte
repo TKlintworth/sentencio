@@ -10,7 +10,7 @@
         socketStore.subscribe((socket) => {
             if (socket){
                 subscribedSocket = socket;
-                subscribedSocket.on('global-player-count', (data) => {
+                subscribedSocket.on('global-client-count', (data) => {
                     onlinePlayers = data;
                     console.log('Online Players:', data);
                 });

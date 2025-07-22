@@ -40,10 +40,29 @@
             isInLobby = true;
         }
 
+        const handleLobbyLeft = (joinedShortCode) => {
+            console.log("Leaving lobby: ", joinedShortCode);
+            isInLobby = false;
+        }
+
+        const handleUserJoinedLobby = (data) => {
+            console.warn("User joined lobby: ", data);
+        }
+
+        function handleUserLeftLobby(data) {
+            console.warn("User left lobby: ", data);
+        }
+
         socketSubscription.on('lobby-joined', handleLobbyJoined);
+        socketSubscription.on('lobby-left', handleLobbyLeft);
+        socketSubscription.on('user-joined-lobby', handleUserJoinedLobby)
+        socketSubscription.on('user-left-lobby', handleUserLeftLobby)
 
         cleanup = () => {
             socketSubscription.off('lobby-joined', handleLobbyJoined);
+            socketSubscription.off('lobby-left', handleLobbyLeft);
+            socketSubscription.off('user-joined-lobby', handleUserJoinedLobby)
+            socketSubscription.off('user-left-lobby', handleUserLeftLobby)
         }
     }
 
