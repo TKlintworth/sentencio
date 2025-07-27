@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from 'svelte';
+    import { onDestroy, onMount } from 'svelte';
     import { get } from 'svelte/store';
     import { goto } from '$app/navigation';
     import { socketStore } from '../../lib/socketStore.js';
@@ -7,6 +7,8 @@
     
     let lobbies = [];
     let error = null;
+    let cleanup = null;
+    let socketSubscription = null;
 
     $: filteredLobbies = Object.entries(lobbies);
 
@@ -16,46 +18,55 @@
     }
 
     onMount(() => {
-        const unsubscribe =
-            socketStore.subscribe((socket) => {
-                if (socket){
-                    socket.emit('list-lobbies');
+        console.warn("Server List Mounted");
+        const unsubscribe = socketStore.subscribe((socket) => {
+            if (socket) {
+                socketSubscription = socket;
+                setupEventListeners();
+                socket.emit('list-lobbies');
+            }
+        });
 
-                    socket.on('list-lobbies', (listLobbies) => {
-                        lobbies = listLobbies;
-                        error = null;
-                    });
-
-                    socket.on('lobby-created', () => {
-                        socket.emit('list-lobbies');
-                    });
-
-                    socket.on('lobby-updated', (updatedLobby) => {
-                        lobbies[updatedLobby.id] = updatedLobby;
-                        lobbies = {...lobbies};
-                    });
-
-                    socket.on('lobby-deleted', (deletedLobbyId) => {
-                        delete lobbies[deletedLobbyId];
-                        lobbies = {...lobbies};
-                    });
-
-                    socket.on('error', handleSocketError);
-                }
-            });
-
-            return () => {
-                unsubscribe();
-                const socket = get(socketStore);
-                if (socket) {
-                    socket.off('list-lobbies');
-                    socket.off('lobby-created');
-                    socket.off('lobby-updated');
-                    socket.off('lobby-deleted');
-                    socket.off('error', handleSocketError);
-                }
-            };
+        return unsubscribe;
     });
+
+    onDestroy(() => {
+        cleanup?.();
+    })
+
+    function setupEventListeners() {
+        const handleListLobbies = (listLobbies) => {
+            console.warn("Client side lobby list LobbyList: ", listLobbies);
+            lobbies = listLobbies;
+            error = null;
+        }
+
+        const handleLobbyCreated = () => {
+            socket.emit('list-lobbies');
+        }
+
+        const handleLobbyUpdated = () => {
+            console.warn("Lobby updated");
+        }
+
+        const handleLobbyDeleted = (deletedLobbyId) => {
+            console.warn("Lobby Deleted ID: ", deletedLobbyId);
+        }
+
+        socketSubscription.on('list-lobbies', handleListLobbies)
+        socketSubscription.on('lobby-created', handleLobbyCreated)
+        socketSubscription.on('lobby-updated', handleLobbyUpdated)
+        socketSubscription.on('lobby-deleted', handleLobbyDeleted)
+        socketSubscription.on('error', handleSocketError)
+
+        cleanup = () => {
+            socketSubscription.off('list-lobbies', handleListLobbies)
+            socketSubscription.off('lobby-created', handleLobbyCreated)
+            socketSubscription.off('lobby-updated', handleLobbyUpdated)
+            socketSubscription.off('lobby-deleted', handleLobbyDeleted)
+            socketSubscription.off('error', handleSocketError)
+        }
+    }
 
     function createLobbyButtonClicked() {
         try {
@@ -106,5 +117,9 @@
         padding: 10px;
         border-radius: 5px;
         margin-bottom: 10px;
+    }
+
+    * {
+        font-family: "Fredoka";
     }
 </style>

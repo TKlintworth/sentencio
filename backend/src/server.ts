@@ -71,9 +71,10 @@ io.on('connection', (socket) => {
 		}
 	});
 
-	socket.on(SocketEvents.LIST_LOBBIES, () => {
+	socket.on(SocketEvents.LIST_LOBBIES, async () => {
 		try {
-			LobbyController.listLobbies();
+			const lobbies = await LobbyController.listLobbies();
+			socket.emit(SocketEvents.LIST_LOBBIES, lobbies);
 		} catch (error: any) {
 			errorHandler(socket, 'LIST_LOBBIES_ERROR', error.message);
 		}

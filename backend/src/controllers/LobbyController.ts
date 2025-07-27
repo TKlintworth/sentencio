@@ -92,14 +92,12 @@ export default class LobbyController
         console.warn("LobbyController.leaveLobby: ", req);
         
         await LobbyService.removeUserFromLobby(req);
-        
     }
-
-    // TODO: Players in lobby endpoint
 
     static async listLobbies()
     {
-        return null;
-        //return ListLobbiesResponse.parse(LobbyService.listAllLobbies());
+        const lobbies = await LobbyService.getLobbies();
+        //console.warn("LobbyController.listLobbies: ", lobbies);
+        return lobbies;
     }
 }

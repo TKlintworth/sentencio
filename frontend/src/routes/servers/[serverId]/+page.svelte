@@ -123,7 +123,7 @@
 </script>
 
 {#if lobbyData}
-    <LobbyHeader lobbyData={lobbyData} shortCode={shortCode} slot="header" />
+    <!--<LobbyHeader lobbyData={lobbyData} shortCode={shortCode} slot="header" />--> <Header slot="header" />
 {:else}
     <Header slot="header" />
 {/if}

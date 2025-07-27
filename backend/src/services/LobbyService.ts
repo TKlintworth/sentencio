@@ -102,6 +102,29 @@ export default class LobbyService
         return result.map((row: any) => row.username);
     }
 
+    public static async getLobbies(): Promise<ILobby[]>
+    {
+        console.warn("Getting all lobbies");
+
+        const result = await sql`
+            SELECT * FROM lobbies
+        `;
+
+        console.warn(`Found ${result.length} lobbies.`);
+
+        return result.map((row: any) => ({
+            id: row.id,
+            name: row.name,
+            shortCode: row.short_code,
+            createdAt: row.created_at,
+            maxUsers: row.max_users,
+            status: row.status,
+            game: row.game_id ?? undefined,
+            password: row.password ?? undefined,
+            owner: row.owner_id
+        } as ILobby));
+    }
+
     //public static async removeUserFromLobby(lobbyUser: ILobbyUser): Promise<ILobbyUser>
     //{
         // lobby_users table

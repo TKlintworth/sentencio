@@ -12,6 +12,7 @@ export enum SocketEvents
     JOIN_LOBBY = "join-lobby", //changed
     LOBBY_JOINED = "lobby-joined",
     LEAVE_LOBBY = "leave-lobby", //changed
+    LOBBY_LEFT = "lobby-left",
     LIST_LOBBIES = "list-lobbies",
     LOBBY_CREATED = "lobby-created",
     GET_LOBBY_INFO = "get-lobby-info",

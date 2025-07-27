@@ -1,17 +1,17 @@
 <script>
     import LobbyList from "../../components/lobby/LobbyList.svelte";
-    import UserList from "../../components/users/UserList.svelte";
+    //import UserList from "../../components/users/UserList.svelte";
   </script>
   
   <div class="container">
     <div class="row">
       <div class="col-md-8">
-        <h1>Lobby List</h1>
+        <h1 class="text-2xl font-bold">Lobby List</h1>
         <LobbyList></LobbyList>
       </div>
       <div class="col-md-4">
         <h2>Online Players</h2>
-        <UserList></UserList>
+        <!--<UserList></UserList>-->
       </div>
     </div>
   </div>
@@ -46,5 +46,9 @@
   
     h1, h2 {
       margin-bottom: 20px;
+    }
+
+    * {
+        font-family: "Fredoka";
     }
   </style>
