@@ -122,12 +122,6 @@
     });
 </script>
 
-{#if lobbyData}
-    <!--<LobbyHeader lobbyData={lobbyData} shortCode={shortCode} slot="header" />--> <Header slot="header" />
-{:else}
-    <Header slot="header" />
-{/if}
-
 <main class="container mx-auto">
     <h1 class="text-3xl font-bold mb-8">Lobby: {shortCode}</h1>
 
