@@ -124,21 +124,4 @@ export default class LobbyService
             owner: row.owner_id
         } as ILobby));
     }
-
-    //public static async removeUserFromLobby(lobbyUser: ILobbyUser): Promise<ILobbyUser>
-    //{
-        // lobby_users table
-    //}
-
-/*  
-    public static async listAllLobbies(): Promise<ILobby[]>
-    {
-        return lobbies;
-    }
-
-    public static async findById(id: string):Promise<ILobby>
-    {
-        return null;
-    } 
-*/
 }

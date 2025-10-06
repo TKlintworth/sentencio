@@ -90,6 +90,12 @@ export default class LobbyController
     static async leaveLobby(req: LeaveLobbyRequest, socket: Socket)
     {
         console.warn("LobbyController.leaveLobby: ", req);
+
+        // If the lobby is now empty, set the lobby status to 'closed'
+        // Get the amount of users in the lobby
+        
+        // Remove the user from the lobby
+
         
         await LobbyService.removeUserFromLobby(req);
     }
