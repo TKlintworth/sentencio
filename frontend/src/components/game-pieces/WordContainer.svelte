@@ -1,21 +1,56 @@
 <script>
+  import { dndzone } from 'svelte-dnd-action';
   import Word from './Word.svelte';
+  import { createEventDispatcher } from 'svelte';
+
+  const dispatch = createEventDispatcher();
   
-  export let type; // 'words' or 'sentence'
-  export let words = [];
+  export let type; 
+  export let words = ["apple", "banana", "cherry", "date", "elderberry", "fig", "grape"];
+  export let containerId; // unique id for this container
   
-  let visibleWords = [];
+  let items = [];
   
-  $: if (type === 'sentence') {
-    visibleWords = []; // empty for now
-  } else {
-    visibleWords = words;
+  // convert words to items with unique ids
+  $: items = words.map((word, idx) => ({
+    id: `${containerId}-${word}-${idx}`, // unique id
+    word: word
+  }));
+  
+  function handleDndConsider(e) {
+    items = e.detail.items;
   }
+  
+  function handleDndFinalize(e) {
+    items = e.detail.items;
+    
+    dispatch('itemsChanged', {
+        containerId,
+        items: items.map(item => item.word) // send back just the words
+    });
+  }
+  
+  const flipDurationMs = 150;
+  const dropTargetStyle = {
+    outline: '2px dashed #4d9c4b',
+    outlineOffset: '4px'
+  };
 </script>
 
-<div class="word-container" class:sentence-container={type === 'sentence'}>
-  {#each visibleWords as word}
-    <Word {word} />
+<div 
+  class="word-container" 
+  class:sentence-container={type === 'sentence'}
+  use:dndzone={{
+    items, 
+    flipDurationMs,
+    dropTargetStyle,
+    type: 'word' // all zones accept 'word' type
+  }}
+  on:consider={handleDndConsider}
+  on:finalize={handleDndFinalize}
+>
+  {#each items as item (item.id)}
+    <Word word={item.word} />
   {/each}
 </div>
 
