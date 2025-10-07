@@ -2,6 +2,9 @@
   import { dndzone } from 'svelte-dnd-action';
   import Word from './Word.svelte';
   import { createEventDispatcher } from 'svelte';
+  import gsap from 'gsap';
+  import { playSound } from '$lib/sounds';
+  import confetti from 'canvas-confetti';
 
   const dispatch = createEventDispatcher();
   
@@ -19,10 +22,42 @@
   
   function handleDndConsider(e) {
     items = e.detail.items;
+
+    // TODO: play sound when dragging starts
   }
   
   function handleDndFinalize(e) {
+    playSound('drop');
+
     items = e.detail.items;
+    console.log('Finalized items:', items);
+
+    // Juice it up
+    if (type === 'sentence' && items.length > 0) {
+        //const rect = e.target.getBoundingClientRect();
+        //confetti({
+        //    particleCount: 10,
+        //    spread: 40,
+        //    origin: {
+        //        x: rect.left / window.innerWidth,
+        //        y: rect.top / window.innerHeight
+        //    },
+        //    colors: ['#4d9c4b'],
+        //    scalar: 0.6,
+        //    gravity: 1
+        //});
+        // animate the last added item
+        setTimeout(() => {
+            const wordElements = document.querySelectorAll(".sentence-container .word");
+            const lastWord = wordElements[wordElements.length - 1];
+            if (lastWord) {
+                gsap.fromTo(lastWord,
+                    { scale: 1.3 },
+                    { scale: 1, duration: 0.4, ease: 'back.out(1.7)' }
+                );
+            }
+        }, 10); // small delay to ensure DOM is updated
+    }
     
     dispatch('itemsChanged', {
         containerId,
