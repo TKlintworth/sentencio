@@ -1,5 +1,21 @@
 <script>    
     import WordContainer from '../../components/game-pieces/WordContainer.svelte';
+    import RoundTimer from '../../components/game-pieces/RoundTimer.svelte';
+
+    let timer;
+    let gameState = 'idle'; // 'idle', 'playing', 'results'
+
+    function startRound() {
+        gameState = 'playing';
+        timer.reset(60);
+        timer.start();
+    }
+
+    function handleTimeUp() {
+        gameState = 'results';
+        // Additional logic for when time is up can be added here
+        console.log("Time's up! Round over.");
+    }
 
     let wordPool1 = ['apple', 'banana', 'cherry', 'date', 'elderberry', 'fig', 'grape'];
     let wordPool2 = ['run', 'jump', 'swim', 'fly', 'crawl', 'dance', 'sing'];
@@ -25,6 +41,18 @@
     }
 
 </script>
+
+{#if gameState === 'playing'}
+    <RoundTimer
+        bind:this={timer}
+        initialTime={60}
+        onTimeUp={handleTimeUp}
+    />
+{/if}
+<button class="btn btn-primary m-4" on:click={startRound} disabled={gameState === 'playing'}>
+    {gameState === 'playing' ? 'Round in Progress' : 'Start Round'}
+</button>
+
 <div class="playScreenContainer">
     <div class="topWordContainers">
         <WordContainer 

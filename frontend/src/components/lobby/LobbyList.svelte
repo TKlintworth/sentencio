@@ -10,7 +10,7 @@
     let cleanup = null;
     let socketSubscription = null;
 
-    $: filteredLobbies = Object.entries(lobbies);
+    //$: filteredLobbies = Object.entries(lobbies);
 
     function handleSocketError(errorMessage) {
         error = errorMessage;
@@ -41,10 +41,6 @@
             error = null;
         }
 
-        const handleLobbyCreated = () => {
-            socket.emit('list-lobbies');
-        }
-
         const handleLobbyUpdated = () => {
             console.warn("Lobby updated");
         }
@@ -54,14 +50,12 @@
         }
 
         socketSubscription.on('list-lobbies', handleListLobbies)
-        socketSubscription.on('lobby-created', handleLobbyCreated)
         socketSubscription.on('lobby-updated', handleLobbyUpdated)
         socketSubscription.on('lobby-deleted', handleLobbyDeleted)
         socketSubscription.on('error', handleSocketError)
 
         cleanup = () => {
             socketSubscription.off('list-lobbies', handleListLobbies)
-            socketSubscription.off('lobby-created', handleLobbyCreated)
             socketSubscription.off('lobby-updated', handleLobbyUpdated)
             socketSubscription.off('lobby-deleted', handleLobbyDeleted)
             socketSubscription.off('error', handleSocketError)
@@ -99,8 +93,11 @@
         <div class="error-message">{error}</div>
     {/if}
     <div class="lobby-list">
-        {#each filteredLobbies as [lobbyId, lobby]}
+       <!--  {#each filteredLobbies as [lobbyId, lobby]}
             <LobbyCard lobbyId={lobbyId} lobbyData={lobby} />
+        {/each} -->
+        {#each lobbies as lobby (lobby.id)}
+            <LobbyCard lobbyData={lobby} />
         {/each}
     </div>
     <div class="lobby-list-buttons">

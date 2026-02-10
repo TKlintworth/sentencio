@@ -1,4 +1,5 @@
 <!-- SERVER PAGE -->
+ <!-- server/[serverId] -->
 
 <script>
     import { onDestroy, onMount } from 'svelte';
@@ -74,7 +75,7 @@
             if (lobby.owner === user) {
                 // Creator of lobby, auto join
                 joinLobby();
-            } else if (lobby.password) {
+            } else if (lobby.password === "protected") {
                 // Not the owner and a password is required
                 showPasswordModal = true;
             } else {
@@ -95,29 +96,31 @@
         socketSubscription.emit('join-lobby', joinReq)
     }
 
-    function leaveLobby() {
-        const leaveReq = {
-            shortCode: shortCode,
-            username: user
-        }
-        
-        socketSubscription?.emit('leave-lobby', leaveReq);
-        // TODO track if user is in lobby a different way
-        isInLobby = false;
-        goto('/servers');
-    }
-
     function handlePasswordSubmit(event) {
         const { password } = event.detail;
         joinLobby(password);
         showPasswordModal = false;
     }
 
+    function leaveLobby() {
+        emitLeave();
+        goto('/servers');
+    }
+    
+    function emitLeave() {
+        const leaveReq = {
+            shortCode: shortCode,
+            username: user
+        };
+        socketSubscription?.emit('leave-lobby', leaveReq);
+        isInLobby = false;
+    }
+
     // TODO no matter how you leave the page, itll take you to /servers
     onDestroy(() => {
         cleanup?.();
         if (isInLobby) {
-            leaveLobby();
+            emitLeave();
         }
     });
 </script>

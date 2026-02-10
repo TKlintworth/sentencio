@@ -1,92 +1,109 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { tweened } from 'svelte/motion';
   import { cubicOut } from 'svelte/easing';
 
-  export let roundTime = 60;
-  let countdownValue = tweened(roundTime, {
+  export let initialTime = 60; // initial time in seconds
+  export let onTimeUp = () => {}; // callback when time is up
+
+  let timeLeft = tweened(initialTime, {
     duration: 1000,
     easing: cubicOut
   });
 
-  const countdown = () => {
-    if (roundTime > 0) {
-      setTimeout(() => {
-        roundTime -= 1;
-        countdownValue.set(roundTime);
-        countdown();
-      }, 1000);
-    }
-  };
+  let interval;
+  let isRunning = false;
 
-  onMount(() => {
-    countdown();
+  export function start() {
+    isRunning = true;
+    interval = setInterval(() => {
+      if ($timeLeft > 0) {
+        timeLeft.update(t => t - 1);
+      } else {
+        stop();
+        onTimeUp();
+      }
+    }, 1000);
+  }
+
+  export function stop() {
+    isRunning = false;
+    if (interval) clearInterval(interval);
+  }
+
+  export function reset(newTime = initialTime) {
+    stop();
+    timeLeft.set(newTime);
+  }
+
+  onDestroy(() => {
+    stop();
   });
+
+  $: isUrgent = $timeLeft <= 10;
+  $: progress = ($timeLeft / initialTime) * 100;
 </script>
 
-<div class="container">
-  <div class="timer">
-    <svg viewBox="0 0 100 100">
-      <circle cx="50" cy="50" r="45" class="timer-circle" />
-      <path
-        d="M 50, 50 m -45, 0 a 45,45 0 1,0 90,0 a 45,45 0 1,0 -90,0"
-        class="timer-path"
-        style="stroke-dasharray: {$countdownValue * 283 / roundTime}, 283;"
-      />
-    </svg>
-    <div class="timer-label">
-      <div class="timer-value">{Math.ceil($countdownValue)}</div>
-      <div class="timer-text">Time Left in Round</div>
-    </div>
+<div class="timer-container">
+  <div class="timer-display" class:urgent={isUrgent}>
+    <span class="time-value">{Math.ceil($timeLeft)}</span>
+    <span class="time-label">seconds</span>
+  </div>
+
+  <div class="timer-bar">
+    <div
+      class="timer-fill"
+      class:urgent={isUrgent}
+      style="width: {progress}%"
+    ></div>
   </div>
 </div>
 
 <style>
-  .container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-
-  .timer {
-    position: relative;
-    width: 200px;
-    height: 200px;
-  }
-
-  .timer-circle {
-    fill: none;
-    stroke: #eee;
-    stroke-width: 10;
-  }
-
-  .timer-path {
-    fill: none;
-    stroke: #2196f3;
-    stroke-width: 10;
-    stroke-linecap: round;
-    transform: rotate(-90deg);
-    transform-origin: center;
-    transition: stroke-dasharray 0.5s ease-in-out;
-  }
-
-  .timer-label {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  .timer-container {
+    padding: 1rem;
     text-align: center;
   }
 
-  .timer-value {
-    font-size: 48px;
+  .timer-display {
+    font-size: 2rem;
     font-weight: bold;
-    color: #2196f3;
+    color: #4d9c4b;
+    transition: color 0.3s ease;
   }
 
-  .timer-text {
-    font-size: 18px;
-    color: #666;
+  .timer-display.urgent {
+    color: #e5582a;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .time-label {
+    font-size: 1rem;
+    display: block;
+    margin-top: 0.25rem;
+  }
+
+  .timer-bar {
+    width: 100%;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 1rem;
+  }
+
+  .timer-fill {
+    height: 100%;
+    background: #4d9c4b;
+    transition: width 1s linear, background-color 0.3s ease;
+  }
+
+  .timer-fill.urgent {
+    background: #e5582a;
   }
 </style>
