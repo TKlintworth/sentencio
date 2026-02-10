@@ -10,8 +10,6 @@
     let cleanup = null;
     let socketSubscription = null;
 
-    //$: filteredLobbies = Object.entries(lobbies);
-
     function handleSocketError(errorMessage) {
         error = errorMessage;
         console.error(errorMessage);
@@ -93,9 +91,6 @@
         <div class="error-message">{error}</div>
     {/if}
     <div class="lobby-list">
-       <!--  {#each filteredLobbies as [lobbyId, lobby]}
-            <LobbyCard lobbyId={lobbyId} lobbyData={lobby} />
-        {/each} -->
         {#each lobbies as lobby (lobby.id)}
             <LobbyCard lobbyData={lobby} />
         {/each}
