@@ -18,6 +18,7 @@
     let lobbyData = null
     let showPasswordModal = false;
     let isInLobby = false;
+    let lobbyUsers = [];
 
     onMount(() => {
         const unsubscribe = socketStore.subscribe((socket) => {
@@ -54,16 +55,23 @@
             console.warn("User left lobby: ", data);
         }
 
+        const handleLobbyUsersUpdated = (users) => {
+            lobbyUsers = users;
+        }
+
         socketSubscription.on('lobby-joined', handleLobbyJoined);
         socketSubscription.on('lobby-left', handleLobbyLeft);
-        socketSubscription.on('user-joined-lobby', handleUserJoinedLobby)
-        socketSubscription.on('user-left-lobby', handleUserLeftLobby)
+        socketSubscription.on('user-joined-lobby', handleUserJoinedLobby);
+        socketSubscription.on('user-left-lobby', handleUserLeftLobby);
+        socketSubscription.on('lobby-users-updated', handleLobbyUsersUpdated);
 
         cleanup = () => {
             socketSubscription.off('lobby-joined', handleLobbyJoined);
             socketSubscription.off('lobby-left', handleLobbyLeft);
-            socketSubscription.off('user-joined-lobby', handleUserJoinedLobby)
-            socketSubscription.off('user-left-lobby', handleUserLeftLobby)
+            socketSubscription.off('user-joined-lobby', handleUserJoinedLobby);
+            socketSubscription.off('user-left-lobby', handleUserLeftLobby);
+            socketSubscription.off('lobby-users-updated', handleLobbyUsersUpdated);
+
         }
     }
 
@@ -129,12 +137,18 @@
     <h1 class="text-3xl font-bold mb-8">Lobby: {shortCode}</h1>
 
     {#if isInLobby}
+        <div class="lobby-info">
+            <h2>{lobbyData?.name}</h2>
+            <p>Players ({lobbyUsers.length}/{lobbyData?.maxUsers}):</p>
+            <ul>
+                {#each lobbyUsers as username}
+                    <li>{username} {username === lobbyData?.owner ? '👑' : ''}</li>
+                {/each}
+            </ul>
+        </div>
         <button class="btn bg-red-600 text-white" on:click={leaveLobby}>
             Leave Lobby
         </button>
-
-    {:else}
-        <p>Joining lobby...</p>
     {/if}
 </main>
 

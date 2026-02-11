@@ -4,6 +4,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import UserController from './controllers/UserController.ts';
 import LobbyController from './controllers/LobbyController.ts';
+import LobbyService from './services/LobbyService.ts';
 import { GameController } from './controllers/GameController.ts';
 import { errorHandler } from './utils/errorHandler.js';
 import { ErrorTypes } from './utils/constants.js';
@@ -99,14 +100,22 @@ io.on('connection', (socket) => {
 			const joinedShortCode = await LobbyController.joinLobby(req, socket);
 			io.to(joinedShortCode).emit('user-joined-lobby', req.userId);
 			socket.emit(SocketEvents.LOBBY_JOINED, joinedShortCode)
+
+			// Broadcast the updated user list to everyone currently in the room
+			const users = await LobbyService.getLobbyUsers(joinedShortCode);
+			io.to(joinedShortCode).emit('lobby-users-updated', users);
 		} catch (error: any) {
 			errorHandler(socket, 'JOIN_LOBBY_ERROR', error.message);
 		}
 	});
 
-	socket.on(SocketEvents.LEAVE_LOBBY, (req: LeaveLobbyRequest) => {
+	socket.on(SocketEvents.LEAVE_LOBBY, async (req: LeaveLobbyRequest) => {
 		try {
-			LobbyController.leaveLobby(req, socket);
+			await LobbyController.leaveLobby(req, socket);
+			socket.leave(req.shortCode);
+
+			const users = await LobbyService.getLobbyUsers(req.shortCode);
+			io.to(req.shortCode).emit('lobby-users-updated', users);
 		} catch (error: any) {
 			errorHandler(socket, ErrorTypes.LEAVE_LOBBY, error.message);
 		}
