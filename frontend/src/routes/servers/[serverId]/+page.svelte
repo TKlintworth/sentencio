@@ -19,6 +19,7 @@
     let showPasswordModal = false;
     let isInLobby = false;
     let lobbyUsers = [];
+    $: myReadyState = lobbyUsers.find(u => u.username === user)?.ready ?? false;
 
     onMount(() => {
         const unsubscribe = socketStore.subscribe((socket) => {
@@ -59,11 +60,17 @@
             lobbyUsers = users;
         }
 
+        const handleAllPlayersReady = () => {
+            console.warn("All players ready. Auto starting in 5 seconds...");
+
+        }
+
         socketSubscription.on('lobby-joined', handleLobbyJoined);
         socketSubscription.on('lobby-left', handleLobbyLeft);
         socketSubscription.on('user-joined-lobby', handleUserJoinedLobby);
         socketSubscription.on('user-left-lobby', handleUserLeftLobby);
         socketSubscription.on('lobby-users-updated', handleLobbyUsersUpdated);
+        socketSubscription.on('all-players-ready', handleAllPlayersReady);
 
         cleanup = () => {
             socketSubscription.off('lobby-joined', handleLobbyJoined);
@@ -71,6 +78,7 @@
             socketSubscription.off('user-joined-lobby', handleUserJoinedLobby);
             socketSubscription.off('user-left-lobby', handleUserLeftLobby);
             socketSubscription.off('lobby-users-updated', handleLobbyUsersUpdated);
+            socketSubscription.off('all-players-ready', handleAllPlayersReady);
 
         }
     }
@@ -124,6 +132,15 @@
         isInLobby = false;
     }
 
+    function toggleReady() {
+        socketSubscription.emit('toggle-ready', { shortCode, username: user });
+    }
+
+    function startGame() {
+        console.warn("Starting game... (not implemented) ");
+        socketSubscription.emit('start-game', { shortCode });
+    }
+
     // TODO no matter how you leave the page, itll take you to /servers
     onDestroy(() => {
         cleanup?.();
@@ -139,16 +156,33 @@
     {#if isInLobby}
         <div class="lobby-info">
             <h2>{lobbyData?.name}</h2>
+            <p>Code: {shortCode}</p>
             <p>Players ({lobbyUsers.length}/{lobbyData?.maxUsers}):</p>
+
             <ul>
-                {#each lobbyUsers as username}
-                    <li>{username} {username === lobbyData?.owner ? '👑' : ''}</li>
+                {#each lobbyUsers as player}
+                    <li>
+                        {player.username} 
+                        {player.username === lobbyData?.owner ? '👑' : ''}
+                        {player.ready ? '✅' : '⬜'}
+                    </li>
                 {/each}
             </ul>
+
+            <button class="btn bg-blue-600 text-white" on:click={toggleReady}>
+                {myReadyState ? 'Unready' : 'Ready Up'}
+            </button>
+
+            {#if user === lobbyData?.owner}
+                 <button class="btn bg-green-600 text-white" on:click={startGame}>
+                    Start Game
+                </button>
+            {/if}
+
+            <button class="btn bg-red-600 text-white" on:click={leaveLobby}>
+                Leave Lobby
+            </button>
         </div>
-        <button class="btn bg-red-600 text-white" on:click={leaveLobby}>
-            Leave Lobby
-        </button>
     {/if}
 </main>
 

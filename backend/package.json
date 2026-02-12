@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node src/server.ts",
-    "dev": "tsx src/server.ts",
+    "dev": "tsx --watch src/server.ts",
     "build": "tsc",
     "watch": "tsc -w",
     "test:db": "tsx src/db/db.ts",

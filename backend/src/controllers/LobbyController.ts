@@ -1,6 +1,6 @@
 import { Socket } from "socket.io";
 import { ILobby } from "../Interfaces/ILobby.ts";
-import { CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest, UserStatus, LobbyDto, ListLobbiesResponse } from "../models/index.ts";
+import { CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest, UserStatus, LobbyDto, ListLobbiesResponse, ToggleReadyRequest } from "../models/index.ts";
 import { Lobby } from "../schemas/Lobby.ts";
 import UserService from "../services/UserService.ts";
 import * as HttpStatus from "http-status-codes";
@@ -105,5 +105,17 @@ export default class LobbyController
         const lobbies = await LobbyService.getLobbies();
         //console.warn("LobbyController.listLobbies: ", lobbies);
         return lobbies;
+    }
+
+    static async toggleReady(req: ToggleReadyRequest)
+    {
+        const validatedReq = ToggleReadyRequest.parse(req);
+        await LobbyService.toggleReady(validatedReq.shortCode, validatedReq.username);
+        const users = await LobbyService.getLobbyUsers(validatedReq.shortCode);
+
+        return {
+            users,
+            allReady: users.length > 0 && users.every(u => u.ready)
+        };
     }
 }

@@ -48,7 +48,13 @@ export const ListLobbiesResponse = Z.object({
     lobbies: Z.array(LobbyDto)
 });
 
+export const ToggleReadyRequest = Z.object({
+    shortCode: Z.string().min(1).max(36),
+    username: Z.string().min(1).max(255)
+});
+
 export type CreateLobbyRequest = Z.infer<typeof CreateLobbyRequest>;
 export type JoinLobbyRequest = Z.infer<typeof JoinLobbyRequest>;
 export type LeaveLobbyRequest = Z.infer<typeof LeaveLobbyRequest>;
 export type ListLobbiesResponse = Z.infer<typeof ListLobbiesResponse>;
+export type ToggleReadyRequest = Z.infer<typeof ToggleReadyRequest>;

@@ -16,6 +16,8 @@ export enum SocketEvents
     LIST_LOBBIES = "list-lobbies",
     LOBBY_CREATED = "lobby-created",
     GET_LOBBY_INFO = "get-lobby-info",
+    TOGGLE_READY = "toggle-ready",
+    ALL_PLAYERS_READY = "all-players-ready",
 
     // Game Events
     START_GAME = "start-game",

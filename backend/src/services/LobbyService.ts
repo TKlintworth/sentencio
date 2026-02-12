@@ -26,6 +26,11 @@ export default class LobbyService
         return lobby;
     }
 
+    public static async deleteLobby(shortCode: string): Promise<void>
+    {
+        await sql`DELETE FROM lobbies WHERE short_code = ${shortCode}`;
+    }
+
     public static async getLobbyByShortCode(shortCode: string) : Promise<ILobby | null>
     {
         // lobbies table
@@ -59,9 +64,9 @@ export default class LobbyService
         // lobby_users table
         console.warn(`Adding user to lobby: ${lobbyUser.userId} to ${lobbyUser.lobbyId}`);
         const result = await sql`
-            INSERT INTO lobby_users (lobby_id, username, short_code) 
-            VALUES (${lobbyUser.lobbyId}, ${lobbyUser.userId}, ${lobbyUser.shortCode})
-            ON CONFLICT (lobby_id, username) DO NOTHING
+            INSERT INTO lobby_users (lobby_id, username, short_code, ready) 
+            VALUES (${lobbyUser.lobbyId}, ${lobbyUser.userId}, ${lobbyUser.shortCode}, false)
+            ON CONFLICT (lobby_id, username) DO UPDATE SET ready = false
             RETURNING *
         `;
 
@@ -89,17 +94,20 @@ export default class LobbyService
         console.warn("User removed from lobby:", leaveReq.username);
     }
 
-    public static async getLobbyUsers(shortCode: string): Promise<string[]>
+    public static async getLobbyUsers(shortCode: string): Promise<{ username: string, ready: boolean }[]>
     {
         console.warn("Getting users for lobby with shortCode:", shortCode);
 
         const result = await sql`
-            SELECT username FROM lobby_users WHERE short_code = ${shortCode}
+            SELECT username, ready FROM lobby_users WHERE short_code = ${shortCode}
         `;
 
         console.warn("Users in lobby:", result.map((row: any) => row.username));
 
-        return result.map((row: any) => row.username);
+        return result.map((row: any) => ({
+            username: row.username,
+            ready: row.ready
+        }));
     }
 
     public static async getLobbies(): Promise<ILobby[]>
@@ -123,5 +131,21 @@ export default class LobbyService
             password: row.password ?? undefined,
             owner: row.owner_id
         } as ILobby));
+    }
+
+    public static async toggleReady(shortCode: string, username: string): Promise<boolean>
+    {
+        const result = await sql `
+            UPDATE lobby_users
+            SET ready = NOT ready
+            WHERE short_code = ${shortCode} AND username = ${username}
+            RETURNING ready
+        `;
+
+        if (result.length === 0) {
+            throw new Error("User not found in lobby");
+        }
+
+        return result[0].ready;
     }
 }

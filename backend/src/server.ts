@@ -9,7 +9,7 @@ import { GameController } from './controllers/GameController.ts';
 import { errorHandler } from './utils/errorHandler.js';
 import { ErrorTypes } from './utils/constants.js';
 import { SocketEvents } from './events/events.js';
-import { CreateUserRequest, CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest } from './models/index.ts';
+import { CreateUserRequest, CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest, ToggleReadyRequest } from './models/index.ts';
 import { join } from 'path';
 
 const app: Express = express();
@@ -115,11 +115,29 @@ io.on('connection', (socket) => {
 			socket.leave(req.shortCode);
 
 			const users = await LobbyService.getLobbyUsers(req.shortCode);
-			io.to(req.shortCode).emit('lobby-users-updated', users);
+
+			if (users.length === 0) {
+				await LobbyService.deleteLobby(req.shortCode);
+			} else {
+				io.to(req.shortCode).emit('lobby-users-updated', users);
+			}
 		} catch (error: any) {
 			errorHandler(socket, ErrorTypes.LEAVE_LOBBY, error.message);
 		}
 	});
+
+	socket.on(SocketEvents.TOGGLE_READY, async (req: ToggleReadyRequest) => {
+		try {
+			const result = await LobbyController.toggleReady(req);
+			io.to(req.shortCode).emit('lobby-users-updated', result.users);
+
+			if (result.allReady) {
+				io.to(req.shortCode).emit(SocketEvents.ALL_PLAYERS_READY);
+			}
+		} catch (error: any) {
+			errorHandler(socket, 'TOGGLE_READY_ERROR', error.message)
+		}
+	})
 
 	// GAME CONTROLLER EVENTS
 	//socket.on(SocketEvents.Game.StartGame, (lobbyId) => {

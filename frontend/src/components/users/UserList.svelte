@@ -1,3 +1,4 @@
+<!-- UserList.svelte -->
 <script>
     import { onMount, onDestroy } from 'svelte';
     import { socketStore } from '../../lib/socketStore.js';

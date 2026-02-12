@@ -1,3 +1,4 @@
+<!-- UserCard.svelte -->
 <script>
   export let user;
   export let ready;
