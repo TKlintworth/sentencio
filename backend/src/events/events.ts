@@ -19,6 +19,10 @@ export enum SocketEvents
     TOGGLE_READY = "toggle-ready",
     ALL_PLAYERS_READY = "all-players-ready",
 
+    // CHAT EVENTS
+    SEND_MESSAGE = "send-message",
+    LOBBY_MESSAGE = "lobby-message",
+
     // Game Events
     START_GAME = "start-game",
     END_GAME = "end-game",

@@ -9,7 +9,7 @@ import { GameController } from './controllers/GameController.ts';
 import { errorHandler } from './utils/errorHandler.js';
 import { ErrorTypes } from './utils/constants.js';
 import { SocketEvents } from './events/events.js';
-import { CreateUserRequest, CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest, ToggleReadyRequest } from './models/index.ts';
+import { CreateUserRequest, CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest, ToggleReadyRequest, SendMessageRequest } from './models/index.ts';
 import { join } from 'path';
 
 const app: Express = express();
@@ -98,8 +98,15 @@ io.on('connection', (socket) => {
 	socket.on(SocketEvents.JOIN_LOBBY, async (req: JoinLobbyRequest) => {
 		try {
 			const joinedShortCode = await LobbyController.joinLobby(req, socket);
-			io.to(joinedShortCode).emit('user-joined-lobby', req.userId);
+			io.to(joinedShortCode).emit('user-joined-lobby', req.username);
 			socket.emit(SocketEvents.LOBBY_JOINED, joinedShortCode)
+
+			// Send a message about this join
+			io.to(joinedShortCode).emit(SocketEvents.LOBBY_MESSAGE, {
+				username: 'System',
+				content: `${req.username} joined the lobby`,
+				timestamp: new Date().toISOString()
+			});
 
 			// Broadcast the updated user list to everyone currently in the room
 			const users = await LobbyService.getLobbyUsers(joinedShortCode);
@@ -114,8 +121,14 @@ io.on('connection', (socket) => {
 			await LobbyController.leaveLobby(req, socket);
 			socket.leave(req.shortCode);
 
-			const users = await LobbyService.getLobbyUsers(req.shortCode);
+			// Send a message about this leave
+			io.to(req.shortCode).emit(SocketEvents.LOBBY_MESSAGE, {
+				username: 'System',
+				content: `${req.username} left the lobby`,
+				timestamp: new Date().toISOString()
+			});
 
+			const users = await LobbyService.getLobbyUsers(req.shortCode);
 			if (users.length === 0) {
 				await LobbyService.deleteLobby(req.shortCode);
 			} else {
@@ -136,6 +149,22 @@ io.on('connection', (socket) => {
 			}
 		} catch (error: any) {
 			errorHandler(socket, 'TOGGLE_READY_ERROR', error.message)
+		}
+	})
+
+	socket.on(SocketEvents.SEND_MESSAGE, async (req: SendMessageRequest) => {
+		try {
+			const validatedReq = SendMessageRequest.parse(req);
+
+			const message = {
+				username: validatedReq.username,
+				content: validatedReq.content,
+				timestamp: new Date().toISOString()
+			};
+
+			io.to(validatedReq.shortCode).emit(SocketEvents.LOBBY_MESSAGE, message);
+		} catch (error: any) {
+			errorHandler(socket, 'SEND_MESSAGE_ERROR', error.message);
 		}
 	})
 

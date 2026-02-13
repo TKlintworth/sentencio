@@ -62,10 +62,10 @@ export default class LobbyService
     public static async addUserToLobby(lobbyUser: ILobbyUser): Promise<ILobbyUser>
     {
         // lobby_users table
-        console.warn(`Adding user to lobby: ${lobbyUser.userId} to ${lobbyUser.lobbyId}`);
+        console.warn(`Adding user to lobby: ${lobbyUser.username} to ${lobbyUser.lobbyId}`);
         const result = await sql`
             INSERT INTO lobby_users (lobby_id, username, short_code, ready) 
-            VALUES (${lobbyUser.lobbyId}, ${lobbyUser.userId}, ${lobbyUser.shortCode}, false)
+            VALUES (${lobbyUser.lobbyId}, ${lobbyUser.username}, ${lobbyUser.shortCode}, false)
             ON CONFLICT (lobby_id, username) DO UPDATE SET ready = false
             RETURNING *
         `;
@@ -77,7 +77,7 @@ export default class LobbyService
         console.warn("User added to lobby:", result[0]);
         return {
             lobbyId: result[0].lobby_id,
-            userId: result[0].username,
+            username: result[0].username,
             shortCode: result[0].short_code
         } as ILobbyUser;
     }

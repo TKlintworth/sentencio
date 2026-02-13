@@ -1,4 +1,4 @@
-<!-- SERVER PAGE -->
+<!-- SERVER/LOBBY PAGE -->
  <!-- server/[serverId] -->
 
 <script>
@@ -9,6 +9,7 @@
     import UserList from '../../../components/users/UserList.svelte';
     import PasswordModal from '../../../components/layouts/PasswordModal.svelte';
     import LobbyHeader from '../../../components/layouts/LobbyHeader.svelte';
+    import LobbyChat from '../../../components/lobby/LobbyChat.svelte';
     import Header from '../../../components/layouts/Header.svelte';
 
     const shortCode = $page.params.serverId;
@@ -103,7 +104,7 @@
 
     function joinLobby(password= '') {
         const joinReq = {
-            userId: user,
+            username: user,
             shortCode: shortCode,
             password: password,
             lobbyId: lobbyData.id
@@ -168,6 +169,12 @@
                     </li>
                 {/each}
             </ul>
+
+            <LobbyChat 
+                socket={socketSubscription}
+                shortCode={shortCode}
+                username={user} 
+            />  
 
             <button class="btn bg-blue-600 text-white" on:click={toggleReady}>
                 {myReadyState ? 'Unready' : 'Ready Up'}

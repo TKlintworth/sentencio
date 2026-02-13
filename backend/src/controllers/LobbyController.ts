@@ -55,7 +55,7 @@ export default class LobbyController
         const joinResult = await LobbyService.addUserToLobby(validatedReq)
         const lobbyShortCode = joinResult.shortCode;
         console.warn("LobbyController.joinLobby: ", joinResult);
-        console.warn(`User ${joinResult.userId} joined lobby ${joinResult.lobbyId} with shortCode ${joinResult.shortCode}`);
+        console.warn(`User ${joinResult.username} joined lobby ${joinResult.lobbyId} with shortCode ${joinResult.shortCode}`);
         // Creates a room with the shortCode as its name
         socket.join(lobbyShortCode);
 

@@ -36,6 +36,6 @@ export interface ILobbyUser
     // user_id VARCHAR(36) REFERENCES users(id) ON DELETE CASCADE,
     // PRIMARY KEY (lobby_id, user_id)
     lobbyId: string;
-    userId: string;
+    username: string;
     shortCode: string;
 };
