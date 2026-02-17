@@ -2,6 +2,17 @@ import { z as Z } from "zod";
 import { MessageDto } from "./messages.ts";
 import { UserDto } from "./users.ts";
 
+const Username = Z.string()
+    .min(1, "Username required")
+    .max(20, "Username too long")
+    .trim()
+    .regex(/^[a-zA-Z0-9_-]+$/, "Username can only contain letters, numbers, underscores, and hyphens");
+
+const LobbyName = Z.string()
+    .min(1, "Lobby name required")
+    .max(50, "Lobby name too long")
+    .trim();
+
 export enum LobbyStatus 
 {
     Started = "started",
@@ -24,23 +35,23 @@ export const LobbyDto = Z.object({
 });
 
 export const CreateLobbyRequest = Z.object({
-    name: Z.string(),
+    name: LobbyName,
     //users: Z.array(UserDto),
     //users: Z.array(Z.any()),
     maxUsers: Z.number().min(1).max(10), // make these env variables
     password: Z.string().optional(),
-    owner: Z.string()
+    owner: Username
 });
 
 export const JoinLobbyRequest = Z.object({
     lobbyId: Z.string(),
     shortCode: Z.string(),
-    username: Z.string(),
+    username: Username,
     password: Z.string().optional()
 });
 
 export const LeaveLobbyRequest = Z.object({
-    username: Z.string(),
+    username: Username,
     shortCode: Z.string()
 });
 
@@ -50,14 +61,14 @@ export const ListLobbiesResponse = Z.object({
 
 export const ToggleReadyRequest = Z.object({
     shortCode: Z.string().min(1).max(36),
-    username: Z.string().min(1).max(255)
+    username: Username
 });
 
 // Lobby chat models
 
 export const SendMessageRequest = Z.object({
     shortCode: Z.string().min(1).max(36),
-    username: Z.string().min(1).max(255),
+    username: Username,
     content: Z.string().min(1).max(500)
 });
 

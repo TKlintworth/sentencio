@@ -20,6 +20,7 @@
     let showPasswordModal = false;
     let isInLobby = false;
     let lobbyUsers = [];
+    let errorMessage = null;
     $: myReadyState = lobbyUsers.find(u => u.username === user)?.ready ?? false;
 
     onMount(() => {
@@ -66,12 +67,23 @@
 
         }
 
+        const handleError = (error) => {
+            errorMessage = error.message || error;
+
+            if (!isInLobby) {
+                setTimeout(() => goto('/servers'), 3000);
+            } else {
+                setTimeout(() => errorMessage = null, 5000); // Clear error after 5 seconds
+            }
+        };
+
         socketSubscription.on('lobby-joined', handleLobbyJoined);
         socketSubscription.on('lobby-left', handleLobbyLeft);
         socketSubscription.on('user-joined-lobby', handleUserJoinedLobby);
         socketSubscription.on('user-left-lobby', handleUserLeftLobby);
         socketSubscription.on('lobby-users-updated', handleLobbyUsersUpdated);
         socketSubscription.on('all-players-ready', handleAllPlayersReady);
+        socketSubscription.on('app-error', handleError);
 
         cleanup = () => {
             socketSubscription.off('lobby-joined', handleLobbyJoined);
@@ -80,7 +92,7 @@
             socketSubscription.off('user-left-lobby', handleUserLeftLobby);
             socketSubscription.off('lobby-users-updated', handleLobbyUsersUpdated);
             socketSubscription.off('all-players-ready', handleAllPlayersReady);
-
+            socketSubscription.off('app-error', handleError);
         }
     }
 
@@ -153,6 +165,15 @@
 
 <main class="container mx-auto">
     <h1 class="text-3xl font-bold mb-8">Lobby: {shortCode}</h1>
+
+    {#if errorMessage}
+        <div class="bg-red-100 text-red-700 p-3 rounded mb-4">
+            {errorMessage}
+            {#if !isInLobby}
+                <p class="text-sm mt-1">Redirecting to server browser...</p>
+            {/if}
+        </div>
+    {/if}
 
     {#if isInLobby}
         <div class="lobby-info">

@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { ILobby } from "../Interfaces/ILobby.ts";
+import { ILobby, ILobbyUser } from "../Interfaces/ILobby.ts";
 import { CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest, UserStatus, LobbyDto, ListLobbiesResponse, ToggleReadyRequest } from "../models/index.ts";
 import { Lobby } from "../schemas/Lobby.ts";
 import UserService from "../services/UserService.ts";
@@ -48,18 +48,25 @@ export default class LobbyController
     }
 
     // POST /lobbies/join
-    static async joinLobby(req: JoinLobbyRequest, socket: Socket) 
+    static async joinLobby(req: JoinLobbyRequest): Promise<ILobbyUser> 
     {
         // Call LobbyServer.addUserToLobby()
         const validatedReq = JoinLobbyRequest.parse(req);
-        const joinResult = await LobbyService.addUserToLobby(validatedReq)
-        const lobbyShortCode = joinResult.shortCode;
-        console.warn("LobbyController.joinLobby: ", joinResult);
-        console.warn(`User ${joinResult.username} joined lobby ${joinResult.lobbyId} with shortCode ${joinResult.shortCode}`);
-        // Creates a room with the shortCode as its name
-        socket.join(lobbyShortCode);
 
-        return lobbyShortCode;
+        const lobby = await LobbyService.getLobbyByShortCode(validatedReq.shortCode);
+        if (!lobby) throw new Error("Lobby not found");
+        
+        if (lobby.password && lobby.owner !== validatedReq.username && lobby.password !== validatedReq.password) {
+            throw new Error("Incorrect password");
+        }
+
+        const currentUsers = await LobbyService.getLobbyUsers(validatedReq.shortCode);
+        if (currentUsers.length >= lobby.maxUsers) {
+            throw new Error("Lobby is full");
+        }
+
+        const joinResult = await LobbyService.addUserToLobby(validatedReq)
+        return joinResult;
     }
 
     static async getLobbyInfo(shortCode: string): Promise<ILobby | null> {
