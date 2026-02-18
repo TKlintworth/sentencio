@@ -40,15 +40,25 @@
 - Client-side error display with auto-clear and redirect on join failure
 - Deleted dead `LIST_ALL_USERS` handler and all commented-out code from server.ts
 
+### v0.1.5 — Live Lobby Browser
+- Real-time lobby list updates via global broadcast on create/join/leave/delete
+- Player count from JOIN query on lobby_users
+- Password field sanitized to "protected" in lobby list responses
+- LobbyCard shows Full/In Progress states with disabled join button
+- Removed manual refresh button (unnecessary with real-time updates)
+- Empty lobby list state messaging
+- Cleaned dead code from LobbyCard and LobbyList
+
 ### Backlog — UX Polish (unscheduled, pre-v1.0)
 - Error modals instead of inline redirect for join failures (lobby full, wrong password)
 - Client-side username validation on Landing page input (inline feedback on invalid chars/length)
 - Surface `app-error` events on CreateLobbyForm page
 - Lobby browser: show error when navigating to a deleted/nonexistent lobby
+- Lobby list sorting (default by newest, options: player count, time active)
 
 ## Planned Sprints — Lobby Hardening
 
-### v0.1.5 — Session Identity
+### v0.1.6 — Session Identity
 - Generate client-side session UUID (`crypto.randomUUID()`)
 - Store in sessionStorage, persist across page navigations
 - Change `lobby_users` PK from `(lobby_id, username)` to `(lobby_id, session_id)`
@@ -57,28 +67,28 @@
 - Duplicate display names now allowed
 - Enables future reconnection handling
 
-### v0.1.6 — Owner Transfer & Disconnect Handling
+### v0.1.7 — Owner Transfer & Disconnect Handling
 - Transfer ownership when owner leaves but lobby isn't empty
 - Broadcast ownership change so new owner gets Start Game button
 - Map socket IDs to session IDs (in-memory or DB column)
 - Handle `disconnect` event: identify which lobby the socket was in, remove user
 - Grace period before removal (allow reconnection window)
 
-### v0.1.7 — Lobby Polish & Real-Time Browser
+### v0.1.8 — Lobby Polish & Real-Time Browser
 - Broadcast lobby create/delete globally for live server browser
 - Player count on LobbyCard in server browser
 - Filter or visually mark full lobbies
 - "Game in progress" status display
 - Lobby expiry: auto-delete stale lobbies after 30min idle
 
-### v0.1.8 — Ready System Polish
+### v0.1.9 — Ready System Polish
 - 5-second auto-start countdown when all players ready
 - Cancel countdown if anyone unreadies
 - Owner can force-start regardless of ready states
 - Minimum 2 players for auto-start (owner can still solo-start)
 - Rate-limit ready toggle to prevent spam
 
-### v0.1.9 — Pre-Game Config
+### v0.1.10 — Pre-Game Config
 - Owner configures: number of rounds, round duration, word categories
 - Settings visible to all lobby players
 - Settings passed to game creation flow

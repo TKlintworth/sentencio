@@ -110,15 +110,16 @@ export default class LobbyService
         }));
     }
 
-    public static async getLobbies(): Promise<ILobby[]>
+    public static async getLobbies(): Promise<(ILobby & { playerCount: number })[]>
     {
         console.warn("Getting all lobbies");
 
         const result = await sql`
-            SELECT * FROM lobbies
+            SELECT l.*, COUNT(lu.username) as player_count
+            FROM lobbies l
+            LEFT JOIN lobby_users lu ON l.id = lu.lobby_id
+            GROUP BY l.id
         `;
-
-        console.warn(`Found ${result.length} lobbies.`);
 
         return result.map((row: any) => ({
             id: row.id,
@@ -128,9 +129,10 @@ export default class LobbyService
             maxUsers: row.max_users,
             status: row.status,
             game: row.game_id ?? undefined,
-            password: row.password ?? undefined,
-            owner: row.owner_id
-        } as ILobby));
+            password: row.password ? "protected" : undefined,
+            owner: row.owner_id,
+            playerCount: Number(row.player_count)
+        }));
     }
 
     public static async toggleReady(shortCode: string, username: string): Promise<boolean>

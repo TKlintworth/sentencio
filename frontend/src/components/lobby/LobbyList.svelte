@@ -1,6 +1,5 @@
 <script>
     import { onDestroy, onMount } from 'svelte';
-    import { get } from 'svelte/store';
     import { goto } from '$app/navigation';
     import { socketStore } from '../../lib/socketStore.js';
     import LobbyCard from './LobbyCard.svelte';
@@ -34,28 +33,21 @@
 
     function setupEventListeners() {
         const handleListLobbies = (listLobbies) => {
-            console.warn("Client side lobby list LobbyList: ", listLobbies);
             lobbies = listLobbies;
             error = null;
         }
 
-        const handleLobbyUpdated = () => {
-            console.warn("Lobby updated");
-        }
-
-        const handleLobbyDeleted = (deletedLobbyId) => {
-            console.warn("Lobby Deleted ID: ", deletedLobbyId);
+        const handleLobbiesUpdated = (updatedLobbies) => {
+            lobbies = updatedLobbies;
         }
 
         socketSubscription.on('list-lobbies', handleListLobbies)
-        socketSubscription.on('lobby-updated', handleLobbyUpdated)
-        socketSubscription.on('lobby-deleted', handleLobbyDeleted)
+        socketSubscription.on('lobbies-updated', handleLobbiesUpdated)
         socketSubscription.on('error', handleSocketError)
 
         cleanup = () => {
             socketSubscription.off('list-lobbies', handleListLobbies)
-            socketSubscription.off('lobby-updated', handleLobbyUpdated)
-            socketSubscription.off('lobby-deleted', handleLobbyDeleted)
+            socketSubscription.off('lobbies-updated', handleLobbiesUpdated)
             socketSubscription.off('error', handleSocketError)
         }
     }
@@ -65,15 +57,6 @@
             goto('/servers/create');
         } catch (error) {
             handleSocketError('Error navigating to create lobby page');
-        }
-    }
-
-    function refreshButtonClicked() {
-        const socket = get(socketStore);
-        if (socket) {
-            socket.emit('list-lobbies');
-        } else {
-            handleSocketError('Not connected to server');
         }
     }
 
@@ -91,13 +74,16 @@
         <div class="error-message">{error}</div>
     {/if}
     <div class="lobby-list">
-        {#each lobbies as lobby (lobby.id)}
-            <LobbyCard lobbyData={lobby} />
-        {/each}
+        {#if lobbies.length === 0}
+        <p class="text-center p-8">No lobbies available. Create one now!</p>
+        {:else}
+            {#each lobbies as lobby (lobby.id)}
+                <LobbyCard lobbyData={lobby} />
+            {/each}
+        {/if}
     </div>
     <div class="lobby-list-buttons">
         <button class="btn bg-de-york-600 text-cod-gray-100" on:click={createLobbyButtonClicked}>Create Lobby</button>
-        <button class="btn bg-de-york-600 text-cod-gray-100" on:click={refreshButtonClicked}>Refresh</button>
         <button class="btn bg-de-york-600 text-cod-gray-100" on:click={backButtonClicked}>Back</button>
     </div>
 </div>

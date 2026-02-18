@@ -23,6 +23,11 @@ const io = new Server(httpServer, {
 
 const gameController = new GameController();
 
+async function broadcastLobbyList() {
+	const lobbies = await LobbyService.getLobbies();
+	io.emit(SocketEvents.LOBBIES_UPDATED, lobbies);
+}
+
 io.on('connection', (socket) => {
 	// Now the socket represents a connection to a specific client
 
@@ -60,6 +65,7 @@ io.on('connection', (socket) => {
 		try {
 			const lobby = await LobbyController.createLobby(req);
 			socket.emit(SocketEvents.LOBBY_CREATED, lobby)
+			await broadcastLobbyList();
 		} catch (error: any) {
 			errorHandler(socket, ErrorTypes.CREATE_LOBBY, error.message);
 		}
@@ -105,6 +111,7 @@ io.on('connection', (socket) => {
 			// Broadcast the updated user list to everyone currently in the room
 			const users = await LobbyService.getLobbyUsers(joinedShortCode);
 			io.to(joinedShortCode).emit('lobby-users-updated', users);
+			await broadcastLobbyList();
 		} catch (error: any) {
 			errorHandler(socket, ErrorTypes.JOIN_LOBBY, error.message);
 		}
@@ -128,6 +135,7 @@ io.on('connection', (socket) => {
 			} else {
 				io.to(req.shortCode).emit('lobby-users-updated', users);
 			}
+			await broadcastLobbyList();
 		} catch (error: any) {
 			errorHandler(socket, ErrorTypes.LEAVE_LOBBY, error.message);
 		}
