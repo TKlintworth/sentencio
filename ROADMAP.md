@@ -56,7 +56,66 @@
 - Lobby browser: show error when navigating to a deleted/nonexistent lobby
 - Lobby list sorting (default by newest, options: player count, time active)
 
-## Planned Sprints — Lobby Hardening
+## Current Sprint
+
+### v0.2.0 — Start Game & Game Screen Transition
+- Owner clicks Start Game → server creates in-memory game state
+- Lobby status changes to "started" (prevents new joins)
+- All clients in the room navigate to the game view
+- Design game state shape to support future metrics/history persistence
+- Use consistent `playerId` field internally (eases future identity refactor)
+- Game screen shows placeholder layout with player list
+
+## Planned Sprints — Core Gameplay
+
+### v0.2.1 — Word Distribution & Round Start
+- Hardcoded word lists organized by category (nouns, verbs, adjectives, modifiers, function words)
+- Server selects random subset per round, sends identical words to all players
+- Random prompt selected and sent to all players
+- Client renders word pools by category and prompt display
+- Player names injected into word pool as usable words
+
+### v0.2.2 — Sentence Building
+- Drag words from pools into sentence drop zone (svelte-dnd-action)
+- Words removed from pool when used, returned if removed from sentence
+- Sentence preview text renders below drop zone
+- Max word limit on sentence area
+- Submit button (early submit) and server-authoritative timer
+- Server validates submitted words exist in the distributed pool (cheat prevention)
+- Auto-submit on timer expiry (blank if nothing built)
+
+### v0.2.3 — Voting Phase
+- Server collects all submissions, broadcasts sentences anonymously
+- Voting UI: sentence cards with vote buttons
+- Single vote per player initially (ranked choice as future option)
+- Cannot vote for own sentence (server-enforced)
+- Server rejects duplicate votes
+- Timer on voting phase
+
+### v0.2.4 — Vote Tallying & Round Results
+- Server tallies votes, reveals authors
+- Results screen: sentences ranked by votes, authors revealed
+- Cumulative scoreboard display
+- Server advances to next round after results timer
+
+### v0.2.5 — Game Loop & End Game
+- Round counter and progression (N rounds, default 10)
+- Cumulative scores persisting across rounds
+- Game phase state machine: BUILDING → VOTING → RESULTS → repeat → FINAL_RESULTS
+- Final results screen with winner highlight
+- Return to lobby option after game ends
+- Lobby status returns to "waiting" when game ends
+
+### v0.2.6 — Polish & Configurability
+- Ranked choice voting option (3 weighted votes)
+- Configurable timers (building phase, voting phase)
+- Configurable round count
+- Configurable max words per sentence
+- Prompt selection/customization by lobby owner
+- Rematch voting system
+- Configurable rule: words consumed on use vs reusable
+
+## Planned Sprints — Lobby Hardening (deferred)
 
 ### v0.1.6 — Session Identity
 - Generate client-side session UUID (`crypto.randomUUID()`)
@@ -74,66 +133,33 @@
 - Handle `disconnect` event: identify which lobby the socket was in, remove user
 - Grace period before removal (allow reconnection window)
 
-### v0.1.8 — Lobby Polish & Real-Time Browser
-- Broadcast lobby create/delete globally for live server browser
-- Player count on LobbyCard in server browser
-- Filter or visually mark full lobbies
-- "Game in progress" status display
-- Lobby expiry: auto-delete stale lobbies after 30min idle
-
-### v0.1.9 — Ready System Polish
+### v0.1.8 — Ready System Polish
 - 5-second auto-start countdown when all players ready
 - Cancel countdown if anyone unreadies
 - Owner can force-start regardless of ready states
 - Minimum 2 players for auto-start (owner can still solo-start)
 - Rate-limit ready toggle to prevent spam
 
-### v0.1.10 — Pre-Game Config
+### v0.1.9 — Pre-Game Config
 - Owner configures: number of rounds, round duration, word categories
 - Settings visible to all lobby players
 - Settings passed to game creation flow
 - Bridge between lobby system and game system
 
-## Planned Sprints — Core Gameplay
-
-### v0.2.0 — Start Game Flow
-- Owner clicks Start Game → transition all players to game view
-- Game record created (DB or in-memory)
-- Lobby status changes to "in-progress"
-- All clients navigate to game screen
-- Connect existing WordContainer and RoundTimer components
-
-### v0.2.1 — Word Distribution
-- Word pool system: shared pool per round
-- Word categories and parts-of-speech tagging
-- Server distributes words to all players simultaneously
-- Words rendered in draggable WordContainer
-
-### v0.2.2 — Sentence Building
-- Players drag words from pool into sentence container
-- Real-time local state (no server sync during building)
-- Submit sentence when satisfied or timer expires
-- Server collects all submissions
-
-### v0.2.3 — Voting Phase
-- Display all submitted sentences anonymously
-- Players vote on funniest (can't vote for own)
-- Tally votes, award points
-- Display round results with scores
-
-### v0.2.4 — Game Loop & Scoring
-- Multiple rounds with cumulative scoring
-- Round transitions with score display
-- End-of-game results screen
-- Winner announcement with confetti
-
 ## Future Epics (Not Yet Planned)
 
-### User Accounts
+### User Accounts & Identity
 - Registration and login (email/password or OAuth)
 - Persistent user profiles with match history
 - Session identity upgrades to authenticated identity
 - Friends list and invite system
+
+### Match History & Metrics
+- Game history table: id, lobby_name, played_at, rounds, players with scores
+- Round history table: game_id, round_number, prompt, sentences with votes
+- In-memory game state already structured for easy persistence
+- Stats: games won, sentences played, most voted sentences
+- Personal stats dashboard
 
 ### Word System
 - User-submitted words with moderation pipeline
