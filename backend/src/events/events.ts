@@ -28,6 +28,8 @@ export enum SocketEvents
     // Game Events
     START_GAME = "start-game",
     END_GAME = "end-game",
+    GAME_STARTED = "game-started",
+    GAME_STATE_UPDATE = "game-state-update",
 
     APP_ERROR = "app-error",
 }

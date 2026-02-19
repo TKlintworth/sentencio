@@ -135,6 +135,10 @@ export default class LobbyService
         }));
     }
 
+    public static async updateLobbyStatus(shortCode: string, status: string): Promise<void> {
+        await sql`UPDATE lobbies SET status = ${status} WHERE short_code = ${shortCode}`;
+    }
+
     public static async toggleReady(shortCode: string, username: string): Promise<boolean>
     {
         const result = await sql `

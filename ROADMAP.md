@@ -55,6 +55,7 @@
 - Surface `app-error` events on CreateLobbyForm page
 - Lobby browser: show error when navigating to a deleted/nonexistent lobby
 - Lobby list sorting (default by newest, options: player count, time active)
+- Real-time global player count
 
 ## Current Sprint
 

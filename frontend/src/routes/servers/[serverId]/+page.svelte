@@ -67,6 +67,13 @@
 
         }
 
+        const handleGameStarted = (gameState) => {
+            console.warn("Game started: ", gameState);
+            // Store game state for the game page to pick up 
+            sessionStorage.setItem('sentencio:gameState', JSON.stringify(gameState));
+            goto('/play');
+        }
+
         const handleError = (error) => {
             errorMessage = error.message || error;
 
@@ -83,6 +90,7 @@
         socketSubscription.on('user-left-lobby', handleUserLeftLobby);
         socketSubscription.on('lobby-users-updated', handleLobbyUsersUpdated);
         socketSubscription.on('all-players-ready', handleAllPlayersReady);
+        socketSubscription.on('game-started', handleGameStarted);
         socketSubscription.on('app-error', handleError);
 
         cleanup = () => {
@@ -92,6 +100,7 @@
             socketSubscription.off('user-left-lobby', handleUserLeftLobby);
             socketSubscription.off('lobby-users-updated', handleLobbyUsersUpdated);
             socketSubscription.off('all-players-ready', handleAllPlayersReady);
+            socketSubscription.off('game-started', handleGameStarted);
             socketSubscription.off('app-error', handleError);
         }
     }
@@ -151,7 +160,7 @@
 
     function startGame() {
         console.warn("Starting game... (not implemented) ");
-        socketSubscription.emit('start-game', { shortCode });
+        socketSubscription.emit('start-game', { shortCode, username: user });
     }
 
     // TODO no matter how you leave the page, itll take you to /servers

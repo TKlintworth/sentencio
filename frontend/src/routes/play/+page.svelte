@@ -1,4 +1,4 @@
-<script>    
+<!-- <script>    
     import WordContainer from '../../components/game-pieces/WordContainer.svelte';
     import RoundTimer from '../../components/game-pieces/RoundTimer.svelte';
 
@@ -123,7 +123,76 @@
     :global(.topWordContainers) > * {
         width: 50vw;
     }
-</style>
+</style> -->
 
+<script>
+    import { onMount, onDestroy } from 'svelte';
+    import { goto } from '$app/navigation';
+    import { socketStore } from '../../lib/socketStore.js';
+    import RoundTimer from '../../components/game-pieces/RoundTimer.svelte';
 
+    let gameState = null;
+    let socketSubscription = null;
+    let cleanup = null;
+
+    onMount(() => {
+        // Load initial game state from sessionStorage
+        const stored = sessionStorage.getItem('sentencio:gameState');
+        if (!stored) {
+            goto('/');
+            return;
+        }
+        gameState = JSON.parse(stored);
+
+        const unsubscribe = socketStore.subscribe((socket) => {
+            if (socket) {
+                socketSubscription = socket;
+                setupEventListeners();
+            }
+        });
+
+        return unsubscribe;
+    });
+
+    function setupEventListeners() {
+        const handleGameStateUpdate = (state) => {
+            gameState = state;
+        };
+
+        socketSubscription.on('game-state-update', handleGameStateUpdate);
+
+        cleanup = () => {
+            socketSubscription.off('game-state-update', handleGameStateUpdate);
+        }
+    }
+
+    onDestroy(() => {
+        cleanup?.();
+    });
+</script>
+
+<main class="container mx-auto p-4">
+    {#if gameState}
+        <div class="game-header">
+            <h1 class="text-3x1 font-bold">Sentencio</h1>
+            <p>Round {gameState.currentRound} / {gameState.maxRounds}</p>
+            <p>Phase: {gameState.phase}</p>
+        </div>
+
+        <div class="player-list mt-4">
+            <h2 class="text-xl font-bold mb-2">Players</h2>
+            {#each gameState.players as player}
+            <div class="inline-block bg-de-york-100 rounded px-3 py-1 m-1">
+                {player.displayName}: {player.score} pts
+            </div>
+            {/each}
+        </div>
+
+        <div class="game-area mt-8 p-8 border-2 border-dashed border-gray-300 rounded-lg text-center">
+            <p class="text-gray-500 text-lg">Game area - words and building zone coming in v0.2.1</p>
+        </div>
+    {:else}
+        <p>Loading game...</p>
+    {/if}
+</main>
 

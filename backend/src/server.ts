@@ -10,7 +10,7 @@ import { errorHandler } from './utils/errorHandler.ts';
 import { ErrorTypes } from './utils/constants.ts';
 import { SocketEvents } from './events/events.ts';
 import { CreateUserRequest, CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest, ToggleReadyRequest, SendMessageRequest } from './models/index.ts';
-import { join } from 'path';
+import { GameStore } from './game/GameStore.ts';
 
 const app: Express = express();
 const httpServer = http.createServer(app);
@@ -48,6 +48,35 @@ io.on('connection', (socket) => {
 		const count = await totalUserCount();
 		console.log(`Client disconnected: ${socket.id}, Total clients: ${count}`);
 		socket.emit('global-client-count', count);
+	});
+
+	//GAME EVENTS
+	socket.on(SocketEvents.START_GAME, async (req: { shortCode: string, username: string }) => {
+		try {
+			// Validation
+			const lobby = await LobbyService.getLobbyByShortCode(req.shortCode);
+			if (!lobby) throw new Error("Lobby not found");
+			if (lobby.owner !== req.username) throw new Error("Only the lobby owner can start the game");
+			if (GameStore.exists(req.shortCode)) throw new Error("Game already in progress");
+
+			// Get players from lobby
+			const lobbyUsers = await LobbyService.getLobbyUsers(req.shortCode);
+
+			// Create game
+			const game = GameStore.create(req.shortCode);
+			lobbyUsers.forEach(u => game.addPlayer(u.username, u.username));
+
+			// Update the lobby status
+			await LobbyService.updateLobbyStatus(req.shortCode, 'started');
+
+			// Broadcast to all the players in the room
+			io.to(req.shortCode).emit(SocketEvents.GAME_STARTED, game.getPublicState());
+
+			// Broadcast updated lobby list (status changed)
+			await broadcastLobbyList();
+		} catch (error: any) {
+			errorHandler(socket, ErrorTypes.START_GAME, error.message);
+		}
 	});
 
 	// USER CONTROLLER EVENTS
