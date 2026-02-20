@@ -155,6 +155,15 @@
 - Session identity upgrades to authenticated identity
 - Friends list and invite system
 
+### XP, Leveling & Achievements
+- Requires: User Accounts & Identity epic
+- XP awarded for game actions (play, win, votes received, streaks)
+- Level derived from cumulative XP with tunable curve
+- Achievement table with unlock conditions checked against match history
+- Achievement examples: First Win, Perfect Round, 100 Games Played
+- Profile display: level, XP bar, achievement showcase
+- In-memory game state already captures all data needed for achievement checks
+
 ### Match History & Metrics
 - Game history table: id, lobby_name, played_at, rounds, players with scores
 - Round history table: game_id, round_number, prompt, sentences with votes
