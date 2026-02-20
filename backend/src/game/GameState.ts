@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { NOUNS, VERBS, ADJECTIVES, MODIFIERS, FUNCTION_WORDS, PROMPTS } from "./wordLists.ts";
 
 export enum GamePhase {
     LOBBY = "lobby",
@@ -15,10 +16,20 @@ export interface PlayerState {
     connected: boolean;
 }
 
+export interface WordCategories {
+    nouns: string[];
+    verbs: string[];
+    adjectives: string[];
+    modifiers: string[];
+    functionWords: string[];
+    playerNames: string[];
+}
+
 export interface RoundState {
     roundNumber: number;
     prompt: string;
-    words: string[];
+    words: string[]; // flat list for validation "did this player only use words they were given"
+    categories: WordCategories, //categorized for displaying
     sentences: Map<string, string>; //playerId -> submitted sentences
     votes: Map<string, string[]>; 
 }
@@ -38,6 +49,11 @@ export const DEFAULT_CONFIG: GameConfig = {
     resultsTimerSeconds: 10,
     maxWordsPerSentence: 20,
 };
+
+function shuffleAndPick<T>(array: T[], count: number): T[] {
+    const shuffled = [...array].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+}
 
 export class GameState {
     public id: string;
@@ -70,6 +86,7 @@ export class GameState {
     }
 
     getPublicState() {
+        const currentRound = this.getCurrentRound();
         return {
             id: this.id,
             phase: this.phase,
@@ -77,6 +94,57 @@ export class GameState {
             maxRounds: this.config.maxRounds,
             players: this.getPlayerList(),
             config: this.config,
+            round: currentRound ? {
+                roundNumber: currentRound.roundNumber,
+                prompt: currentRound.prompt,
+                categories: currentRound.categories,
+            } : null,
         };
+    }
+
+    getCurrentRound(): RoundState | undefined {
+        return this.rounds[this.rounds.length - 1];
+    }
+
+    startNextRound(): RoundState {
+        this.currentRound++;
+        this.phase = GamePhase.BUILDING;
+
+        const playerNames = this.getPlayerList().map(p => p.displayName);
+
+        const roundWords = {
+            nouns: shuffleAndPick(NOUNS, 20),
+            verbs: shuffleAndPick(VERBS, 15),
+            adjectives: shuffleAndPick(ADJECTIVES, 12),
+            modifiers: [...MODIFIERS],
+            functionWords: [...FUNCTION_WORDS],
+            playerNames: [...playerNames],
+        };
+
+        const prompt = shuffleAndPick(
+            PROMPTS.filter(p => !this.rounds.some(r => r.prompt === p)),
+            1
+        )[0] || PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+
+        const allWords = [
+            ...roundWords.nouns,
+            ...roundWords.verbs,
+            ...roundWords.adjectives,
+            ...roundWords.modifiers,
+            ...roundWords.functionWords,
+            ...roundWords.playerNames,
+        ];
+
+        const round: RoundState = {
+            roundNumber: this.currentRound,
+            prompt,
+            words: allWords,
+            categories: roundWords,
+            sentences: new Map(),
+            votes: new Map(),
+        };
+
+        this.rounds.push(round);
+        return round;
     }
 }

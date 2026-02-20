@@ -69,7 +69,10 @@ io.on('connection', (socket) => {
 			// Update the lobby status
 			await LobbyService.updateLobbyStatus(req.shortCode, 'started');
 
-			// Broadcast to all the players in the room
+			// Start round 1 immediately
+			game.startNextRound();
+
+			// Broadcast to all the players in the room the full game state
 			io.to(req.shortCode).emit(SocketEvents.GAME_STARTED, game.getPublicState());
 
 			// Broadcast updated lobby list (status changed)

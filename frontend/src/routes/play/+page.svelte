@@ -157,13 +157,14 @@
     function setupEventListeners() {
         const handleGameStateUpdate = (state) => {
             gameState = state;
+            sessionStorage.setItem('sentencio:gameState', JSON.stringify(state));
         };
 
         socketSubscription.on('game-state-update', handleGameStateUpdate);
 
         cleanup = () => {
             socketSubscription.off('game-state-update', handleGameStateUpdate);
-        }
+        };
     }
 
     onDestroy(() => {
@@ -173,24 +174,79 @@
 
 <main class="container mx-auto p-4">
     {#if gameState}
-        <div class="game-header">
-            <h1 class="text-3x1 font-bold">Sentencio</h1>
-            <p>Round {gameState.currentRound} / {gameState.maxRounds}</p>
-            <p>Phase: {gameState.phase}</p>
-        </div>
-
-        <div class="player-list mt-4">
-            <h2 class="text-xl font-bold mb-2">Players</h2>
-            {#each gameState.players as player}
-            <div class="inline-block bg-de-york-100 rounded px-3 py-1 m-1">
-                {player.displayName}: {player.score} pts
+        <div class="game-header flex justify-between items-center mb-4">
+            <div>
+                <h1 class="text-3x1 font-bold">Sentencio</h1>
+                <p>Round {gameState.currentRound} / {gameState.maxRounds}</p>
             </div>
-            {/each}
+            <div class="player-scores flex gap-2">
+                {#each gameState.players as player}
+                    <div class="bg-de-york-100 rounded px-3 py-1 text-sm">
+                        {player.displayName}: {player.score}
+                    </div>
+                {/each}
+            </div>
         </div>
 
-        <div class="game-area mt-8 p-8 border-2 border-dashed border-gray-300 rounded-lg text-center">
-            <p class="text-gray-500 text-lg">Game area - words and building zone coming in v0.2.1</p>
-        </div>
+        {#if gameState.round}
+            <div class="prompt-area bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 mb-4 text-center">
+                <p class="text-lg font-bold italic">"{gameState.round.prompt}"</p>
+            </div>
+
+            <div class="word-pools grid grid-cols-2 gap-4 mb-4">
+
+                <div class="pool">
+                    <h3 class="font-bold text-sm mb-2 text-gray-500">Nouns</h3>
+                    <div class="flex flex-wrap gap-1">
+                        {#each gameState.round.categories.nouns as word}
+                            <span class="bg-white border rounded px-2 py-1 text-sm cursor-grab">{word}</span>
+                        {/each}
+                    </div>
+                </div>
+
+                <div class="pool">
+                    <h3 class="font-bold text-sm mb-2 text-gray-500">Verbs</h3>
+                    <div class="flex flex-wrap gap-1">
+                        {#each gameState.round.categories.verbs as word}
+                            <span class="bg-white border rounded px-2 py-1 text-sm cursor-grab">{word}</span>
+                        {/each}
+                    </div>
+                </div>
+
+                <div class="pool">
+                    <h3 class="font-bold text-sm mb-2 text-gray-500">Adjectives</h3>
+                    <div class="flex flex-wrap gap-1">
+                        {#each gameState.round.categories.adjectives as word}
+                            <span class="bg-white border rounded px-2 py-1 text-sm cursor-grab">{word}</span>
+                        {/each}
+                    </div>
+                </div>
+
+                <div class="pool">
+                    <h3 class="font-bold text-sm mb-2 text-gray-500">Player Names</h3>
+                    <div class="flex flex-wrap gap-1">
+                        {#each gameState.round.categories.playerNames as word}
+                            <span class="bg-white border rounded px-2 py-1 text-sm cursor-grab">{word}</span>
+                        {/each}
+                    </div>
+                </div>
+            </div>
+
+            <div class="function-words mb-4">
+                <h3 class="font-bold text-sm mb-2 text-gray-500">Modifiers & Function Words</h3>
+                <div class="flex flex-wrap gap-1">
+                    {#each [...gameState.round.categories.modifiers, ...gameState.round.categories.functionWords] as word}
+                        <span class="bg-gray-100 border rounded px-2 py-1 text-xs">{word}</span>
+                    {/each}
+                </div>
+            </div>
+
+            <div class="sentence-area border-2 border-dashed border-green-400 rounded-lg p-6 min-h-[100px] text-center">
+                <p class="text-gray-400">Sentence building zone</p>
+            </div>
+        {:else}
+            <p>Waiting for round to start...</p>
+        {/if}
     {:else}
         <p>Loading game...</p>
     {/if}

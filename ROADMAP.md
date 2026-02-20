@@ -164,6 +164,12 @@
 - Profile display: level, XP bar, achievement showcase
 - In-memory game state already captures all data needed for achievement checks
 
+### Dark Mode & Theming
+- Dark mode toggle (localStorage preference)
+- CSS custom properties for theme colors
+- Consistent theming across all pages (lobby, game, results)
+- Respect OS-level prefers-color-scheme
+
 ### Match History & Metrics
 - Game history table: id, lobby_name, played_at, rounds, players with scores
 - Round history table: game_id, round_number, prompt, sentences with votes
