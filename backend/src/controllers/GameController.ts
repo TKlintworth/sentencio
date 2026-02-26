@@ -1,51 +1,47 @@
-import { LobbyStatus, CreateGameRequest, EndGameRequest, StartGameRequest } from "../models/index.ts";
-import { Game } from "../schemas/Game.ts";
+import { GameState } from "../game/GameState.ts";
+import { GameStore } from "../game/GameStore.ts"
 import LobbyService from "../services/LobbyService.ts";
-import GameService from "../services/GameService.ts";
-import * as HttpStatusCodes from "http-status-codes";
 
-export class GameController
-{
-    public async createGame(req: CreateGameRequest)
-    {
-        const game = new Game();
+export default class GameController {
+    static async startGame(shortCode: string, username: string): Promise<GameState> {
+        const lobby = await LobbyService.getLobbyByShortCode(shortCode);
+        if (!lobby) throw new Error("Lobby not found");
+        if (lobby.owner !== username) throw new Error("Only the lobby owner can start the game");
+        if (GameStore.exists(shortCode)) throw new Error("Game already in progress");
 
-        // const scores = new Scores()
-        // const sentence = new Sentences()
+        const lobbyUsers = await LobbyService.getLobbyUsers(shortCode);
+        const game = GameStore.create(shortCode);
+        lobbyUsers.forEach(u => game.addPlayer(u.username, u.username));
 
-        game.maxRounds = req.maxRounds;
-        game.roundLength = req.roundLength;
+        await LobbyService.updateLobbyStatus(shortCode, 'started');
+        game.startNextRound();
+
+        return game;
     }
 
-    // req: gameid, players[]
-    public async startGame(req: StartGameRequest)
-    {
-        //const lobby = await LobbyService.findById(req.id);
+    static submitSentence(shortCode: string, playerId: string, words: string[]): { allSubmitted: boolean } {
+        const game = GameStore.get(shortCode);
+        if (!game) throw new Error("Game not found");
 
-        //if (lobby)
-        //    return HttpStatusCodes.StatusCodes.NOT_FOUND;
+        const round = game.getCurrentRound();
+        if (!round) throw new Error("No active round");
+        if (game.phase !== "building") throw new Error("Not in building phase");
+        if (round.sentences.has(playerId)) throw new Error("Already submitted");
 
-        const game = await GameService.findById(req.id);
-        
-        if (game)
-            return HttpStatusCodes.StatusCodes.NOT_FOUND;
+        // Validate the submitted words against the pool that was sent to each client
+        const invalidWords = words.filter(w => !round.words.includes(w));
+        if (invalidWords.length > 0) {
+            throw new Error(`Invalid words: ${invalidWords.join(', ')}`);
+        }
 
-        // lobby.game = game.id;
-        // lobby.status = LobbyStatus.Started;
-    }
+        if (words.length > game.config.maxWordsPerSentence) {
+            throw new Error(`Too many words (max ${game.config.maxWordsPerSentence})`);
+        }
 
-    public async endGame(req: EndGameRequest)
-    {
-        //const lobby = await LobbyService.findById(req.id);
+        const sentence = words.join(' ');
+        round.sentences.set(playerId, sentence);
 
-        //if (lobby)
-         //   return HttpStatusCodes.StatusCodes.NOT_FOUND;
-
-        // lobby.status = LobbyStatus.Waiting;
-    }
-
-    public async endRound()
-    {
-        // TODO: do
+        const allSubmitted = round.sentences.size === game.players.size;
+        return { allSubmitted };
     }
 }

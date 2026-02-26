@@ -21,6 +21,7 @@
     let isInLobby = false;
     let lobbyUsers = [];
     let errorMessage = null;
+    let navigatingToGame = false;
     $: myReadyState = lobbyUsers.find(u => u.username === user)?.ready ?? false;
 
     onMount(() => {
@@ -69,6 +70,7 @@
 
         const handleGameStarted = (gameState) => {
             console.warn("Game started: ", gameState);
+            navigatingToGame = true;
             // Store game state for the game page to pick up 
             sessionStorage.setItem('sentencio:gameState', JSON.stringify(gameState));
             goto('/play');
@@ -146,6 +148,7 @@
     }
     
     function emitLeave() {
+        if (navigatingToGame) return; // dont leave the room if we are just going to the game phase
         const leaveReq = {
             shortCode: shortCode,
             username: user

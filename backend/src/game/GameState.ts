@@ -89,6 +89,7 @@ export class GameState {
         const currentRound = this.getCurrentRound();
         return {
             id: this.id,
+            shortCode: this.shortCode,
             phase: this.phase,
             currentRound: this.currentRound,
             maxRounds: this.config.maxRounds,

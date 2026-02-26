@@ -5,12 +5,13 @@ import { Server } from 'socket.io';
 import UserController from './controllers/UserController.ts';
 import LobbyController from './controllers/LobbyController.ts';
 import LobbyService from './services/LobbyService.ts';
-import { GameController } from './controllers/GameController.ts';
+import GameController from './controllers/GameController.ts';
 import { errorHandler } from './utils/errorHandler.ts';
 import { ErrorTypes } from './utils/constants.ts';
 import { SocketEvents } from './events/events.ts';
 import { CreateUserRequest, CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest, ToggleReadyRequest, SendMessageRequest } from './models/index.ts';
 import { GameStore } from './game/GameStore.ts';
+import { GamePhase } from './game/GameState.ts';
 
 const app: Express = express();
 const httpServer = http.createServer(app);
@@ -22,14 +23,58 @@ const io = new Server(httpServer, {
 });
 
 const gameController = new GameController();
+const activeTimers = new Map<string, NodeJS.Timeout>();
 
 async function broadcastLobbyList() {
 	const lobbies = await LobbyService.getLobbies();
 	io.emit(SocketEvents.LOBBIES_UPDATED, lobbies);
 }
 
+function startBuildTimer(shortCode: string) {
+	const game = GameStore.get(shortCode);
+	if (!game) return;
+
+	const duration = game.config.buildTimerSeconds;
+	let remaining = duration;
+
+	// Send initial time
+	io.to(shortCode).emit(SocketEvents.TIMER_UPDATE, { remaining, phase: "building" });
+
+	const interval = setInterval(() => {
+		remaining--;
+		io.to(shortCode).emit(SocketEvents.TIMER_UPDATE, { remaining, phase: "building" });
+		if (remaining <= 0) {
+			clearInterval(interval);
+			activeTimers.delete(shortCode);
+			endBuildingPhase(shortCode);
+		}
+	}, 1000);
+
+	activeTimers.set(shortCode, interval);
+}
+
+function endBuildingPhase(shortCode: string) {
+	const game = GameStore.get(shortCode);
+	if (!game) return;
+
+	const round = game.getCurrentRound();
+	if (!round) return;
+
+	// Auto submit empty sentences for players who didn't submit
+	// TOOD: submit what they have so far
+	for (const [playerId] of game.players) {
+		if (!round.sentences.has(playerId)) {
+			round.sentences.set(playerId, "");
+		}
+	}
+
+	game.phase = GamePhase.VOTING;
+	io.to(shortCode).emit(SocketEvents.BUILDING_PHASE_END, game.getPublicState());
+}
+
 io.on('connection', (socket) => {
 	// Now the socket represents a connection to a specific client
+	
 
 	async function totalUserCount() {
 		const sockets = await io.fetchSockets();
@@ -53,34 +98,49 @@ io.on('connection', (socket) => {
 	//GAME EVENTS
 	socket.on(SocketEvents.START_GAME, async (req: { shortCode: string, username: string }) => {
 		try {
-			// Validation
-			const lobby = await LobbyService.getLobbyByShortCode(req.shortCode);
-			if (!lobby) throw new Error("Lobby not found");
-			if (lobby.owner !== req.username) throw new Error("Only the lobby owner can start the game");
-			if (GameStore.exists(req.shortCode)) throw new Error("Game already in progress");
-
-			// Get players from lobby
-			const lobbyUsers = await LobbyService.getLobbyUsers(req.shortCode);
-
-			// Create game
-			const game = GameStore.create(req.shortCode);
-			lobbyUsers.forEach(u => game.addPlayer(u.username, u.username));
-
-			// Update the lobby status
-			await LobbyService.updateLobbyStatus(req.shortCode, 'started');
-
-			// Start round 1 immediately
-			game.startNextRound();
+			const game = await GameController.startGame(req.shortCode, req.username);
 
 			// Broadcast to all the players in the room the full game state
 			io.to(req.shortCode).emit(SocketEvents.GAME_STARTED, game.getPublicState());
 
 			// Broadcast updated lobby list (status changed)
 			await broadcastLobbyList();
+
+			// Start the build timer for this lobby
+			startBuildTimer(req.shortCode);
 		} catch (error: any) {
 			errorHandler(socket, ErrorTypes.START_GAME, error.message);
 		}
 	});
+
+	socket.on(SocketEvents.SUBMIT_SENTENCE, (req: { shortCode: string, username: string, words: string[] }) => {
+		try {
+			const { allSubmitted } = GameController.submitSentence(req.shortCode, req.username, req.words);
+			socket.emit(SocketEvents.SENTENCE_SUBMITTED, { success: true });
+
+			// Broadcast how many have submitted without revealing content
+			const game = GameStore.get(req.shortCode);
+			if (game) {
+				const round = game.getCurrentRound();
+				io.to(req.shortCode).emit('submission-count', {
+					submitted: round?.sentences.size ?? 0,
+					total: game.players.size,
+				});
+			}
+
+			// If everyone submitted early, skip the timer
+			if (allSubmitted) {
+				const timer = activeTimers.get(req.shortCode);
+				if (timer) {
+					clearInterval(timer);
+					activeTimers.delete(req.shortCode);
+				}
+				endBuildingPhase(req.shortCode);
+			}
+		} catch (error: any) {
+			errorHandler(socket, ErrorTypes.SUBMIT_SENTENCE, error.message);
+		}
+	})
 
 	// USER CONTROLLER EVENTS
 	socket.on(SocketEvents.CREATE_USER, (req: CreateUserRequest) => {

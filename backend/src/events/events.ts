@@ -31,6 +31,10 @@ export enum SocketEvents
     GAME_STARTED = "game-started",
     GAME_STATE_UPDATE = "game-state-update",
     ROUND_STARTED = "round-started",
+    SUBMIT_SENTENCE = "submit-sentence",
+    SENTENCE_SUBMITTED = "sentence-submitted",
+    TIMER_UPDATE = "timer-update",
+    BUILDING_PHASE_END = "building-phase-end",
 
     APP_ERROR = "app-error",
 }

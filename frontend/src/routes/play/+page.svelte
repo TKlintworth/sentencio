@@ -1,139 +1,28 @@
-<!-- <script>    
-    import WordContainer from '../../components/game-pieces/WordContainer.svelte';
-    import RoundTimer from '../../components/game-pieces/RoundTimer.svelte';
-
-    let timer;
-    let gameState = 'idle'; // 'idle', 'playing', 'results'
-
-    function startRound() {
-        gameState = 'playing';
-        timer.reset(60);
-        timer.start();
-    }
-
-    function handleTimeUp() {
-        gameState = 'results';
-        // Additional logic for when time is up can be added here
-        console.log("Time's up! Round over.");
-    }
-
-    let wordPool1 = ['apple', 'banana', 'cherry', 'date', 'elderberry', 'fig', 'grape'];
-    let wordPool2 = ['run', 'jump', 'swim', 'fly', 'crawl', 'dance', 'sing'];
-    let wordPool3 = ['quick', 'lazy', 'happy', 'sad', 'bright', 'dark', 'colorful'];
-    let wordPool4 = ['the', 'a', 'one', 'some', 'any', 'this', 'my'];
-    let sentence = [];
-
-    function handleItemsChanged(event) {
-        const { containerId, items } = event.detail;
-
-        // update the appropriate word pool or sentence based on containerId
-        if (containerId === 'sentence') {
-            sentence = items;
-        } else if (containerId === 'pool1') {
-            wordPool1 = items;
-        } else if (containerId === 'pool2') {
-            wordPool2 = items;
-        } else if (containerId === 'pool3') {
-            wordPool3 = items;
-        } else if (containerId === 'pool4') {
-            wordPool4 = items;
-        }
-    }
-
-</script>
-
-{#if gameState === 'playing'}
-    <RoundTimer
-        bind:this={timer}
-        initialTime={60}
-        onTimeUp={handleTimeUp}
-    />
-{/if}
-<button class="btn btn-primary m-4" on:click={startRound} disabled={gameState === 'playing'}>
-    {gameState === 'playing' ? 'Round in Progress' : 'Start Round'}
-</button>
-
-<div class="playScreenContainer">
-    <div class="topWordContainers">
-        <WordContainer 
-            type="words"
-            words={wordPool1}
-            containerId="pool1"
-            on:itemsChanged={handleItemsChanged}
-        />
-        <WordContainer 
-            type="words"
-            words={wordPool2}
-            containerId="pool2"
-            on:itemsChanged={handleItemsChanged}
-        />
-    </div>
-
-    <div class="sentenceContainer">
-        <WordContainer 
-            type="sentence"
-            words={sentence}
-            containerId="sentence"
-            on:itemsChanged={handleItemsChanged}
-        />
-    </div>
-
-    <div class="bottomWordContainers">
-        <WordContainer 
-            type="words"
-            words={wordPool3}
-            containerId="pool3"
-            on:itemsChanged={handleItemsChanged}
-        />
-        <WordContainer 
-            type="words"
-            words={wordPool4}
-            containerId="pool4"
-            on:itemsChanged={handleItemsChanged}
-        />
-    </div>
-</div>
-
-
-<style>
-    .playScreenContainer {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-evenly;
-    }
-
-    .sentenceContainer {
-        width: 85vw;
-    }
-
-    .topWordContainers {
-        display: flex;
-        width: 100vw;
-        align-items: stretch;
-        flex-basis: initial;
-    }
-
-    .bottomWordContainers {
-        display: flex;
-        margin-bottom: 3%;
-        width: 100vw;
-        align-items: stretch;
-    }
-
-    :global(.topWordContainers) > * {
-        width: 50vw;
-    }
-</style> -->
-
 <script>
     import { onMount, onDestroy } from 'svelte';
     import { goto } from '$app/navigation';
     import { socketStore } from '../../lib/socketStore.js';
+    import WordPool from '../../components/game-pieces/WordPool.svelte';
+    import SentenceBuilder from '../../components/game-pieces/SentenceBuilder.svelte';
     import RoundTimer from '../../components/game-pieces/RoundTimer.svelte';
 
     let gameState = null;
     let socketSubscription = null;
     let cleanup = null;
+
+    // Word pool state (items with unique IDs for svelte-dnd-action)
+    let nounItems = [];
+    let verbItems = [];
+    let adjItems = [];
+    let nameItems = [];
+    let modifierItems = [];
+    let sentenceItems = [];
+
+    // Timer and submission state
+    let timeRemaining = 0;
+    let submitted = false;
+    let submissionCount = 0;
+    let totalPlayers = 0;
 
     onMount(() => {
         // Load initial game state from sessionStorage
@@ -143,6 +32,8 @@
             return;
         }
         gameState = JSON.parse(stored);
+        timeRemaining = gameState.config.buildTimerSeconds;
+        initializeWordPools();
 
         const unsubscribe = socketStore.subscribe((socket) => {
             if (socket) {
@@ -154,22 +45,84 @@
         return unsubscribe;
     });
 
+    function makeItems(words, prefix) {
+        return words.map((word, idx) => ({
+            id: `${prefix}-${idx}-${word}`,
+            word,
+        }));
+    }
+
+    function initializeWordPools() {
+        if (!gameState?.round?.categories) return;
+        const cats = gameState.round.categories;
+        nounItems = makeItems(cats.nouns, 'noun');
+        verbItems = makeItems(cats.verbs, 'verb');
+        adjItems = makeItems(cats.adjectives, 'adj');
+        nameItems = makeItems(cats.playerNames, 'name');
+        modifierItems = makeItems(
+            [...cats.modifiers, ...cats.functionWords],
+            'mod'
+        );
+        sentenceItems = [];
+        submitted = false;
+    }
+
     function setupEventListeners() {
         const handleGameStateUpdate = (state) => {
             gameState = state;
             sessionStorage.setItem('sentencio:gameState', JSON.stringify(state));
         };
 
+        const handleTimerUpdate = (data) => {
+            timeRemaining = data.remaining;
+        };
+
+        const handleSentenceSubmitted = (data) => {
+            if (data.success) submitted = true;
+        };
+
+        const handleSubmissionCount = (data) => {
+            submissionCount = data.submitted;
+            totalPlayers = data.total;
+        };
+
+        const handleBuildingPhaseEnd = (state) => {
+            gameState = state;
+            sessionStorage.setItem('sentencio:gameState', JSON.stringify(state));
+        }
+
         socketSubscription.on('game-state-update', handleGameStateUpdate);
+        socketSubscription.on('timer-update', handleTimerUpdate);
+        socketSubscription.on('sentence-submitted', handleSentenceSubmitted);
+        socketSubscription.on('submission-count', handleSubmissionCount);
+        socketSubscription.on('building-phase-end', handleBuildingPhaseEnd);
 
         cleanup = () => {
             socketSubscription.off('game-state-update', handleGameStateUpdate);
+            socketSubscription.off('timer-update', handleTimerUpdate);
+            socketSubscription.off('sentence-submitted', handleSentenceSubmitted);
+            socketSubscription.off('submission-count', handleSubmissionCount);
+            socketSubscription.off('building-phase-end', handleBuildingPhaseEnd);
         };
+    }
+
+    function handleSubmit(e) {
+        if (!socketSubscription) return;
+        const { words } = e.detail;
+        const user = sessionStorage.getItem('sentencio:username');
+
+        socketSubscription.emit('submit-sentence', {
+            shortCode: gameState.shortCode,
+            username: user,
+            words,
+        });
     }
 
     onDestroy(() => {
         cleanup?.();
     });
+
+    $: timerUrgent = timeRemaining <= 10 && timeRemaining > 0;
 </script>
 
 <main class="container mx-auto p-4">
@@ -178,6 +131,9 @@
             <div>
                 <h1 class="text-3x1 font-bold">Sentencio</h1>
                 <p>Round {gameState.currentRound} / {gameState.maxRounds}</p>
+            </div>
+            <div class="timer text-4xl font-mono font-bold" class:text-red-500={timerUrgent}>
+                {timeRemaining}
             </div>
             <div class="player-scores flex gap-2">
                 {#each gameState.players as player}
@@ -188,64 +144,40 @@
             </div>
         </div>
 
-        {#if gameState.round}
+        {#if gameState.round && gameState.phase === 'building'}
             <div class="prompt-area bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 mb-4 text-center">
                 <p class="text-lg font-bold italic">"{gameState.round.prompt}"</p>
             </div>
 
             <div class="word-pools grid grid-cols-2 gap-4 mb-4">
-
-                <div class="pool">
-                    <h3 class="font-bold text-sm mb-2 text-gray-500">Nouns</h3>
-                    <div class="flex flex-wrap gap-1">
-                        {#each gameState.round.categories.nouns as word}
-                            <span class="bg-white border rounded px-2 py-1 text-sm cursor-grab">{word}</span>
-                        {/each}
-                    </div>
-                </div>
-
-                <div class="pool">
-                    <h3 class="font-bold text-sm mb-2 text-gray-500">Verbs</h3>
-                    <div class="flex flex-wrap gap-1">
-                        {#each gameState.round.categories.verbs as word}
-                            <span class="bg-white border rounded px-2 py-1 text-sm cursor-grab">{word}</span>
-                        {/each}
-                    </div>
-                </div>
-
-                <div class="pool">
-                    <h3 class="font-bold text-sm mb-2 text-gray-500">Adjectives</h3>
-                    <div class="flex flex-wrap gap-1">
-                        {#each gameState.round.categories.adjectives as word}
-                            <span class="bg-white border rounded px-2 py-1 text-sm cursor-grab">{word}</span>
-                        {/each}
-                    </div>
-                </div>
-
-                <div class="pool">
-                    <h3 class="font-bold text-sm mb-2 text-gray-500">Player Names</h3>
-                    <div class="flex flex-wrap gap-1">
-                        {#each gameState.round.categories.playerNames as word}
-                            <span class="bg-white border rounded px-2 py-1 text-sm cursor-grab">{word}</span>
-                        {/each}
-                    </div>
-                </div>
+                <WordPool title="Nouns" poolId="nouns" bind:items={nounItems} />
+                <WordPool title="Verbs" poolId="verbs" bind:items={verbItems} />
+                <WordPool title="Adjectives" poolId="adjectives" bind:items={adjItems} />
+                <WordPool title="Player Names" poolId="names" bind:items={nameItems} />
             </div>
 
-            <div class="function-words mb-4">
-                <h3 class="font-bold text-sm mb-2 text-gray-500">Modifiers & Function Words</h3>
-                <div class="flex flex-wrap gap-1">
-                    {#each [...gameState.round.categories.modifiers, ...gameState.round.categories.functionWords] as word}
-                        <span class="bg-gray-100 border rounded px-2 py-1 text-xs">{word}</span>
-                    {/each}
-                </div>
+            <div class="mb-4">
+                <WordPool title="Modifiers & Function Words" poolId="modifiers" bind:items={modifierItems} small={true} />
             </div>
 
-            <div class="sentence-area border-2 border-dashed border-green-400 rounded-lg p-6 min-h-[100px] text-center">
-                <p class="text-gray-400">Sentence building zone</p>
-            </div>
+            <SentenceBuilder 
+                bind:items={sentenceItems}
+                maxWords={gameState.config.maxWordsPerSentence}
+                {submitted}
+                on:submit={handleSubmit}
+            />
+
+            {#if totalPlayers > 0}
+                <p class="text-sm text-gray-400 mt-2 text-center">
+                    {submissionCount}/{totalPlayers} players submitted
+                </p>
+            {/if}
+        {:else if gameState.phase === 'voting'}
+                <div class="text-center p-8">
+                    <p class="text-xl">Voting phase/view coming in v0.2.3</p>
+                </div>
         {:else}
-            <p>Waiting for round to start...</p>
+            <p>Waiting for next phase...</p>
         {/if}
     {:else}
         <p>Loading game...</p>
