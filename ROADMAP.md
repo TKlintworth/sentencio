@@ -49,69 +49,88 @@
 - Empty lobby list state messaging
 - Cleaned dead code from LobbyCard and LobbyList
 
+### v0.2.0 — Start Game & Game Screen Transition
+- Owner clicks Start Game → server creates in-memory game state
+- Lobby status changes to "started" (prevents new joins)
+- All clients in the room navigate to the game view
+- Game state shape designed for future metrics/history persistence
+- Consistent `playerId` field internally (eases future identity refactor)
+- `getPublicState()` omits sensitive data (other players' sentences)
+- `GameStore` in-memory Map keyed by shortCode
+- `GameConfig` with defaults and partial override support
+
+### v0.2.1 — Word Distribution & Round Start
+- Hardcoded word lists organized by category (nouns, verbs, adjectives, modifiers, function words)
+- Server selects random subset per round, sends identical words to all players
+- Random prompt selected (with deduplication across rounds)
+- Client renders categorized word pools and prompt display
+- Player names injected into word pool as usable words
+- `shuffleAndPick` utility for random selection
+
+### v0.2.2 — Sentence Building
+- Drag words from pools into sentence drop zone (svelte-dnd-action)
+- Word.svelte with GSAP hover animations, WordPool.svelte and SentenceBuilder.svelte components
+- GSAP pop animation on word drop into sentence
+- Sentence preview text renders below drop zone
+- Max word limit with visual feedback (orange border at limit)
+- Submit button and server-authoritative timer with 1-second broadcast ticks
+- Server validates submitted words exist in the distributed pool (cheat prevention)
+- Auto-submit empty sentence on timer expiry
+- Early completion: timer skipped when all players submit
+- Submission count broadcast (X/Y players submitted)
+- `navigatingToGame` flag to prevent leave-lobby emit during game start navigation
+- GameController extracted from server.ts (startGame, submitSentence)
+
+### v0.2.3 — Voting Phase
+- `buildAnonymousSentences()` generates sentenceId → playerId (server) and sentenceId → text (client)
+- Anonymous sentence list broadcast via VOTING_SENTENCES event
+- VotingCard.svelte with `mode` prop ("voting" | "results") for dual-use
+- Vote selection with visual highlight (ring indicator on selected card)
+- Done button to confirm vote (disabled until selection made)
+- Server-side vote validation: phase check, duplicate check, self-vote prevention
+- `registerVote()` on GameState, `castVote()` on GameController
+- Vote timer with server-authoritative countdown
+- `endVotingPhase`: tally votes, award points to sentence authors, reveal results
+- Results screen: sentences ranked by votes, authors revealed, vote counts displayed
+- Cumulative scoreboard on results screen
+
 ### Backlog — UX Polish (unscheduled, pre-v1.0)
 - Error modals instead of inline redirect for join failures (lobby full, wrong password)
 - Client-side username validation on Landing page input (inline feedback on invalid chars/length)
 - Surface `app-error` events on CreateLobbyForm page
 - Lobby browser: show error when navigating to a deleted/nonexistent lobby
 - Lobby list sorting (default by newest, options: player count, time active)
-- Real-time global player count
-
-## Current Sprint
-
-### v0.2.0 — Start Game & Game Screen Transition
-- Owner clicks Start Game → server creates in-memory game state
-- Lobby status changes to "started" (prevents new joins)
-- All clients in the room navigate to the game view
-- Design game state shape to support future metrics/history persistence
-- Use consistent `playerId` field internally (eases future identity refactor)
-- Game screen shows placeholder layout with player list
+- Real-time global player count (io.emit on connect/disconnect)
+- Word pool cross-dragging restriction (pools should only accept returns from sentence)
+- GSAP pop animation only on word addition (not removal) in SentenceBuilder
+- Configurable word counts per category (nounCount, verbCount, adjectiveCount in GameConfig)
 
 ## Planned Sprints — Core Gameplay
 
-### v0.2.1 — Word Distribution & Round Start
-- Hardcoded word lists organized by category (nouns, verbs, adjectives, modifiers, function words)
-- Server selects random subset per round, sends identical words to all players
-- Random prompt selected and sent to all players
-- Client renders word pools by category and prompt display
-- Player names injected into word pool as usable words
-
-### v0.2.2 — Sentence Building
-- Drag words from pools into sentence drop zone (svelte-dnd-action)
-- Words removed from pool when used, returned if removed from sentence
-- Sentence preview text renders below drop zone
-- Max word limit on sentence area
-- Submit button (early submit) and server-authoritative timer
-- Server validates submitted words exist in the distributed pool (cheat prevention)
-- Auto-submit on timer expiry (blank if nothing built)
-
-### v0.2.3 — Voting Phase
-- Server collects all submissions, broadcasts sentences anonymously
-- Voting UI: sentence cards with vote buttons
-- Single vote per player initially (ranked choice as future option)
-- Cannot vote for own sentence (server-enforced)
-- Server rejects duplicate votes
-- Timer on voting phase
-
-### v0.2.4 — Vote Tallying & Round Results
-- Server tallies votes, reveals authors
-- Results screen: sentences ranked by votes, authors revealed
-- Cumulative scoreboard display
-- Server advances to next round after results timer
+### v0.2.4 — Results Screen & Round Transition
+- Results timer: auto-advance to next round after N seconds
+- Hide building/voting timer during results phase
+- Show only round scores on results screen, not cumulative totals
+- Server starts next round: new words, new prompt, phase resets to BUILDING
+- Client resets all round state between rounds (word pools, sentence, voting state)
+- Smooth transition between results → next round building phase
 
 ### v0.2.5 — Game Loop & End Game
-- Round counter and progression (N rounds, default 10)
-- Cumulative scores persisting across rounds
-- Game phase state machine: BUILDING → VOTING → RESULTS → repeat → FINAL_RESULTS
-- Final results screen with winner highlight
-- Return to lobby option after game ends
-- Lobby status returns to "waiting" when game ends
+- Full N-round loop working end-to-end
+- Early exit on all-voted during voting phase (skip timer)
+- Final results screen after last round (cumulative scores, winner highlight)
+- Return to lobby option
+- Game cleanup: reset lobby status to "waiting", remove game from GameStore
+- Lobby browser updates when game ends
 
 ### v0.2.6 — Polish & Configurability
 - Ranked choice voting option (3 weighted votes)
-- Configurable timers (building phase, voting phase)
-- Configurable round count
-- Configurable max words per sentence
+- Score weighting for different vote ranks
+- Sound effects via Howler.js (vote click, results reveal, round transition, winner)
+- GSAP animations on vote selection, score reveals, winner announcement
+- Canvas confetti on game win
+- Configurable timers (building, voting, results)
+- Configurable round count and max words per sentence
 - Prompt selection/customization by lobby owner
 - Rematch voting system
 - Configurable rule: words consumed on use vs reusable
