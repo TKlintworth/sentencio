@@ -11,7 +11,7 @@ import { ErrorTypes } from './utils/constants.ts';
 import { SocketEvents } from './events/events.ts';
 import { CreateUserRequest, CreateLobbyRequest, JoinLobbyRequest, LeaveLobbyRequest, ToggleReadyRequest, SendMessageRequest } from './models/index.ts';
 import { GameStore } from './game/GameStore.ts';
-import { GamePhase } from './game/GameState.ts';
+import { GamePhase, GameState } from './game/GameState.ts';
 
 const app: Express = express();
 const httpServer = http.createServer(app);
@@ -53,6 +53,28 @@ function startBuildTimer(shortCode: string) {
 	activeTimers.set(shortCode, interval);
 }
 
+function startVoteTimer(shortCode: string) {
+	const game = GameStore.get(shortCode);
+	if (!game) return;
+
+	const duration = game.config.voteTimerSeconds;
+	let remaining = duration;
+
+	io.to(shortCode).emit(SocketEvents.TIMER_UPDATE, { remaining, phase: "voting" });
+
+	const interval = setInterval(() => {
+		remaining--;
+		io.to(shortCode).emit(SocketEvents.TIMER_UPDATE, { remaining, phase: "voting" });
+		if (remaining <= 0) {
+			clearInterval(interval);
+			activeTimers.delete(shortCode);
+			endVotingPhase(shortCode);
+		}
+	}, 1000)
+
+	activeTimers.set(shortCode, interval);
+}
+
 function endBuildingPhase(shortCode: string) {
 	const game = GameStore.get(shortCode);
 	if (!game) return;
@@ -70,12 +92,81 @@ function endBuildingPhase(shortCode: string) {
 
 	game.phase = GamePhase.VOTING;
 	io.to(shortCode).emit(SocketEvents.BUILDING_PHASE_END, game.getPublicState());
+
+	startVotingPhase(shortCode);
+	//startVoteTimer();
+}
+
+function startVotingPhase(shortCode: string) {
+	const game = GameStore.get(shortCode);
+	if (!game) return;
+
+	const round = game.getCurrentRound();
+	if (!round) return;
+
+	// Emit anonomized sentence list
+	const { authorMap, clientSentences } = game.buildAnonymousSentences();
+	round.sentenceAuthors = authorMap;
+
+	// Send the clientSentences to clients (convert map to array for json serialization)
+	const sentencesForClient = Array.from(clientSentences.entries()).map(
+		([id, text]) => ({ sentenceId: id, text })
+	);
+	io.to(shortCode).emit(SocketEvents.VOTING_SENTENCES, sentencesForClient);
+
+	// Start vote timer
+	startVoteTimer(shortCode);
+}
+
+// Tally scores and transition to results screen
+function endVotingPhase(shortCode: string) {
+	const game = GameStore.get(shortCode);
+	if (!game) return;
+
+	const round = game.getCurrentRound();
+	if (!round) return; 
+
+	// get the votes
+	// tally votes using round.votes and round.sentenceAuthors
+	const voteCounts = new Map<string, number>();
+
+	for (const [voterId, sentenceIds] of round.votes) {
+		for (const sentenceId of sentenceIds) {
+			voteCounts.set(sentenceId, (voteCounts.get(sentenceId) || 0) + 1);
+		}
+	}
+
+	for (const [sentenceId, count] of voteCounts) {
+		const authorId = round.sentenceAuthors.get(sentenceId);
+		if (authorId) {
+			const player = game.players.get(authorId);
+			if (player) player.score += count;
+		}
+	}
+
+	// Build results to send to clients
+	const results = Array.from(round.sentenceAuthors.entries()).map(([sentenceId, playerId]) => {
+		const player = game.players.get(playerId);
+		return {
+			sentenceId,
+			text: round.sentences.get(playerId) || '',
+			author: player?.displayName || playerId,
+			votes: voteCounts.get(sentenceId) || 0,
+		};
+	}).sort((a,b) => b.votes - a.votes);
+
+	game.phase = GamePhase.RESULTS;
+	io.to(shortCode).emit(SocketEvents.ROUND_RESULTS, {
+		results,
+		scores: game.getPlayerList(),
+		round: game.currentRound,
+		maxRounds: game.config.maxRounds,
+	});
 }
 
 io.on('connection', (socket) => {
 	// Now the socket represents a connection to a specific client
 	
-
 	async function totalUserCount() {
 		const sockets = await io.fetchSockets();
 		const count = sockets.length;
@@ -140,7 +231,16 @@ io.on('connection', (socket) => {
 		} catch (error: any) {
 			errorHandler(socket, ErrorTypes.SUBMIT_SENTENCE, error.message);
 		}
-	})
+	});
+
+	socket.on(SocketEvents.CAST_VOTE, (req: { shortCode: string, username: string, sentenceId: string }) => {
+		try {
+			GameController.castVote(req.shortCode, req.username, req.sentenceId);
+			socket.emit('vote-confirmed', { sentenceId: req.sentenceId });
+		} catch (error: any) {
+			errorHandler(socket, ErrorTypes.CAST_VOTE, error.message);
+		}
+	});
 
 	// USER CONTROLLER EVENTS
 	socket.on(SocketEvents.CREATE_USER, (req: CreateUserRequest) => {

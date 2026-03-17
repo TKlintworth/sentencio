@@ -44,4 +44,10 @@ export default class GameController {
         const allSubmitted = round.sentences.size === game.players.size;
         return { allSubmitted };
     }
+
+    static castVote(shortCode:string, playerId: string, sentenceId: string): void {
+        const game = GameStore.get(shortCode);
+        if (!game) throw new Error("Game not found");
+        game.registerVote(playerId, sentenceId);
+    }
 }

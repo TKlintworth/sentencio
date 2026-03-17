@@ -5,10 +5,18 @@
     import WordPool from '../../components/game-pieces/WordPool.svelte';
     import SentenceBuilder from '../../components/game-pieces/SentenceBuilder.svelte';
     import RoundTimer from '../../components/game-pieces/RoundTimer.svelte';
+    import VotingCard from '../../components/game-pieces/VotingCard.svelte';
 
     let gameState = null;
     let socketSubscription = null;
     let cleanup = null;
+
+    // Voting phase state
+    let votingSentences = [];
+    let hasVoted = false;
+    let hasDoneClicked = false;
+    let votedSentenceId = null;
+    let roundResults = null;
 
     // Word pool state (items with unique IDs for svelte-dnd-action)
     let nounItems = [];
@@ -91,11 +99,29 @@
             sessionStorage.setItem('sentencio:gameState', JSON.stringify(state));
         }
 
+        const handleVotingSentences = (data) => {
+            // We are now in the voting phase
+            // Recieves sentencesForClient (an array of objects [{ sentenceId: id, text: text }])
+            votingSentences = data;
+            timeRemaining = gameState.config.voteTimerSeconds;
+        }
+
+        const handleRoundResults = (data) => {
+            // data { results, scores, round, maxRounds}
+            roundResults = data;
+            gameState.phase = 'results';
+            gameState.players = data.scores;
+            sessionStorage.setItem('sentencio:gameState', JSON.stringify(gameState));
+        }
+
         socketSubscription.on('game-state-update', handleGameStateUpdate);
         socketSubscription.on('timer-update', handleTimerUpdate);
         socketSubscription.on('sentence-submitted', handleSentenceSubmitted);
         socketSubscription.on('submission-count', handleSubmissionCount);
         socketSubscription.on('building-phase-end', handleBuildingPhaseEnd);
+        socketSubscription.on('voting-sentences', handleVotingSentences);
+        socketSubscription.on('vote-confirmed', handleVoteConfirmed);
+        socketSubscription.on('round-results', handleRoundResults);
 
         cleanup = () => {
             socketSubscription.off('game-state-update', handleGameStateUpdate);
@@ -103,6 +129,9 @@
             socketSubscription.off('sentence-submitted', handleSentenceSubmitted);
             socketSubscription.off('submission-count', handleSubmissionCount);
             socketSubscription.off('building-phase-end', handleBuildingPhaseEnd);
+            socketSubscription.off('voting-sentences', handleVotingSentences);
+            socketSubscription.off('vote-confirmed', handleVoteConfirmed);
+            socketSubscription.off('round-results', handleRoundResults);
         };
     }
 
@@ -118,6 +147,34 @@
         });
     }
 
+    function handleVoteConfirmed(data) {
+        hasVoted = true;
+    }
+
+    function clientVoted(e) {
+        if (!socketSubscription) return;
+        if (hasVoted) return;
+        
+        // The client has "confirmed" their vote, either by clicking "Done" or because time ran out
+        const user = sessionStorage.getItem('sentencio:username');
+
+        hasDoneClicked = true;
+
+        socketSubscription.emit('cast-vote', {
+            shortCode: gameState.shortCode,
+            username: user,
+            sentenceId: votedSentenceId,
+        });
+    }
+
+    function handleVote(e) {
+        if (!socketSubscription) return;
+
+        // We just want to store the vote until the time is up or the user clicks "Done"
+        votedSentenceId = e.detail.sentenceId;
+        console.warn("handle vote: ", votedSentenceId);
+    }
+
     onDestroy(() => {
         cleanup?.();
     });
@@ -127,20 +184,14 @@
 
 <main class="container mx-auto p-4">
     {#if gameState}
-        <div class="game-header flex justify-between items-center mb-4">
-            <div>
-                <h1 class="text-3x1 font-bold">Sentencio</h1>
-                <p>Round {gameState.currentRound} / {gameState.maxRounds}</p>
-            </div>
-            <div class="timer text-4xl font-mono font-bold" class:text-red-500={timerUrgent}>
-                {timeRemaining}
-            </div>
-            <div class="player-scores flex gap-2">
-                {#each gameState.players as player}
-                    <div class="bg-de-york-100 rounded px-3 py-1 text-sm">
-                        {player.displayName}: {player.score}
-                    </div>
-                {/each}
+        <div class="game-header flex flex-row justify-center mb-4">
+            <div class="flex-col">
+                <div class="text-4xl font-bold text-center">
+                    Round {gameState.currentRound} of {gameState.maxRounds}
+                </div>
+                <div class="timer text-4xl font-bold text-center" class:text-red-500={timerUrgent}>
+                    {timeRemaining} seconds left
+                </div>
             </div>
         </div>
 
@@ -173,9 +224,44 @@
                 </p>
             {/if}
         {:else if gameState.phase === 'voting'}
-                <div class="text-center p-8">
-                    <p class="text-xl">Voting phase/view coming in v0.2.3</p>
-                </div>
+            <div class="theme text-2xl italic text-gray-600 ml-auto">
+                THEME: {gameState.round.prompt}
+            </div>
+            {#each votingSentences as vs (vs.sentenceId)}
+                <VotingCard 
+                    votingData={vs} 
+                    mode="voting"
+                    selected={votedSentenceId === vs.sentenceId}
+                    on:vote={handleVote}
+                />
+            {/each}
+            <div class="">
+                <button 
+                    class="btn bg-de-york-600 text-white mt-4 mx-auto block"
+                    on:click={clientVoted}
+                    disabled={hasDoneClicked || !votedSentenceId}
+                >
+                    DONE
+                </button>
+            </div>
+        {:else if gameState.phase === 'results'}
+            <div class="results">
+                <h2 class="text-2xl font-bold text-center mb-4">Round {gameState.currentRound} Results</h2>
+                {#each roundResults.results as result}
+                    <VotingCard 
+                        votingData={result}
+                        mode="results"
+                    />
+                {/each}
+            </div>
+            <div class="scoreboard mt-6">
+                <h3 class="text-xl font-bold text-center mb-2">Scores</h3>
+                {#each gameState.players as player}
+                    <div class="text-center">
+                        {player.displayName}: {player.score} pts
+                    </div>
+                {/each}
+            </div>
         {:else}
             <p>Waiting for next phase...</p>
         {/if}

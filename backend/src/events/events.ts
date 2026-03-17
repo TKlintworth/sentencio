@@ -36,5 +36,9 @@ export enum SocketEvents
     TIMER_UPDATE = "timer-update",
     BUILDING_PHASE_END = "building-phase-end",
 
+    VOTING_SENTENCES = "voting-sentences",
+    CAST_VOTE = "cast-vote",
+    ROUND_RESULTS = "round-results",
+
     APP_ERROR = "app-error",
 }

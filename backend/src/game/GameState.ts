@@ -31,7 +31,8 @@ export interface RoundState {
     words: string[]; // flat list for validation "did this player only use words they were given"
     categories: WordCategories, //categorized for displaying
     sentences: Map<string, string>; //playerId -> submitted sentences
-    votes: Map<string, string[]>; 
+    sentenceAuthors: Map<string, string>; // sentence id -> player id
+    votes: Map<string, string[]>; // voterId -> sentenceId
 }
 
 export interface GameConfig {
@@ -142,10 +143,43 @@ export class GameState {
             words: allWords,
             categories: roundWords,
             sentences: new Map(),
+            sentenceAuthors: new Map(),
             votes: new Map(),
         };
 
         this.rounds.push(round);
         return round;
+    }
+
+    buildAnonymousSentences(): { authorMap: Map<string,string>, clientSentences: Map<string,string> } {
+        const authorMap = new Map(); // sentenceId -> playerId (for server)
+        const clientSentences = new Map(); // sentenceId -> sentence text (for clients)
+        const round = this.getCurrentRound();
+        if (!round) return { authorMap, clientSentences };
+
+        for (const [playerId, sentenceText] of round.sentences) {
+            const sentenceId = nanoid();
+            authorMap.set(sentenceId, playerId);
+            clientSentences.set(sentenceId, sentenceText);
+        }
+
+        return { authorMap, clientSentences };
+    }
+
+    // vote registration
+    registerVote(voterId: string, sentenceId: string): void {
+        const round = this.getCurrentRound();
+        if (!round) throw new Error("No active round");
+        if (this.phase !== GamePhase.VOTING) throw new Error("Not in voting phase")
+
+        // Check if already voted
+        if (round.votes.has(voterId)) throw new Error("Already voted");
+
+        // Check they're not voting for their own sentnece
+        const sentenceAuthor = round.sentenceAuthors.get(sentenceId);
+        if (!sentenceAuthor) throw new Error("Invalid sentence");
+        if (sentenceAuthor === voterId) throw new Error("Cannot vote for your own sentence");
+
+        round.votes.set(voterId, [sentenceId]);
     }
 }
